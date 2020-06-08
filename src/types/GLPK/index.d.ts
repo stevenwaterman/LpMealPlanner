@@ -108,7 +108,14 @@ declare module "GLPK" {
     /* reason codes: request for preprocessing */
     export const IPREPRO: 0x07;
     /* reason codes */
-    export type REASON_CODE = typeof IROWGEN | typeof IBINGO | typeof IHEUR | typeof ICUTGEN | typeof IBRANCH | typeof ISELECT | typeof IPREPRO;
+    export type REASON_CODE =
+        typeof IROWGEN
+        | typeof IBINGO
+        | typeof IHEUR
+        | typeof ICUTGEN
+        | typeof IBRANCH
+        | typeof ISELECT
+        | typeof IPREPRO;
 
     /* reason codes (float): request for row generation */
     export const FROWGEN: 2;
@@ -125,7 +132,14 @@ declare module "GLPK" {
     /* reason codes (float): request for preprocessing */
     export const FPREPRO: 128;
     /* reason codes (float) */
-    export type REASON_CODE_F = typeof FROWGEN | typeof FBINGO | typeof FHEUR | typeof FCUTGEN | typeof FBRANCH | typeof FSELECT | typeof FPREPRO;
+    export type REASON_CODE_F =
+        typeof FROWGEN
+        | typeof FBINGO
+        | typeof FHEUR
+        | typeof FCUTGEN
+        | typeof FBRANCH
+        | typeof FSELECT
+        | typeof FPREPRO;
 
     /* MPS file format: fixed (ancient) */
     export const MPS_DECK: 1;
@@ -133,6 +147,20 @@ declare module "GLPK" {
     export const MPS_FILE: 2;
     /* MPS file format */
     export type MPS_FILE_FORMAT = typeof MPS_DECK | typeof MPS_FILE;
+
+    /* solution status: undefined */
+    export const UNDEF: 1;
+    /* solution status: feasible */
+    export const FEAS: 2;
+    /* solution status: infeasible */
+    export const INFEAS: 3;
+    /* solution status: no feasible solution exists */
+    export const NOFEAS: 4;
+    /* solution status: solution is optimal */
+    export const OPT: 5;
+    /* solution status: solution is unbounded */
+    export const UNBND: 6;
+    export type SOLUTION_STATUS = typeof UNDEF | typeof FEAS | typeof INFEAS | typeof NOFEAS | typeof OPT | typeof UNBND;
 
     export function termOutput(enabled: boolean): void;
 
@@ -153,7 +181,7 @@ declare module "GLPK" {
             pricing?: PRICING;
             rTest?: RATIO_TEST;
             presolve?: ENABLE_FLAG;
-        }, callback: (err: string | undefined, ret: number) => void): void;
+        } | null, callback: (err: string | undefined, ret: number) => void): void;
 
         simplexSync(options: {
             msgLev?: MSG_LVL;
@@ -161,18 +189,18 @@ declare module "GLPK" {
             pricing?: PRICING;
             rTest?: RATIO_TEST;
             presolve?: ENABLE_FLAG;
-        }): void;
+        } | null): void;
 
         getNumInt(): number;
 
         intopt(options: {
             cbFunc: (tree: Tree) => void;
             cbReasons?: REASON_CODE_F
-        }, callback: (err: string | undefined, ret: number) => void): void;
+        } | null, callback: (err: string | undefined, ret: number) => void): void;
 
         intoptSync(options: {
             cbFunc: (tree: Tree) => void
-        }): void;
+        } | null): void;
 
         mipObjVal(): number;
 
@@ -208,7 +236,11 @@ declare module "GLPK" {
 
         getColPrim(idx: number): number;
 
+        getRowPrim(idx: number): number;
+
         getItCnt(): number;
+
+        mipStatus(): SOLUTION_STATUS;
     }
 
     export class Mathprog {

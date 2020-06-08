@@ -1,11 +1,12 @@
-import {DB, FR, FX, LO, Problem, UP, VARIABLE_KIND} from "GLPK";
+import {BV, DB, FR, FX, LO, Problem, UP, VARIABLE_KIND} from "GLPK";
 
 type Row<T> = T[]
 type Matrix<T> = Row<T>[];
 
 export function loadMatrix(lp: Problem, coeffMatrix: Matrix<number>): void {
     const width = coeffMatrix.length
-    const arraySize = width * width + 1;
+    const height = coeffMatrix[0].length;
+    const arraySize = width * height + 1;
     const rowArray = new Int32Array(arraySize);
     const colArray = new Int32Array(arraySize);
     const coefficientsArray = new Float64Array(arraySize);
@@ -60,9 +61,10 @@ export function loadStruct(lp: Problem, defs: StructVariableDefinition[]) {
     defs.forEach((def, idx) => {
         lp.setColName(idx + 1, def.name);
         lp.setObjCoef(idx + 1, def.objectiveCoef);
-        if(def.kind) {
-            lp.setColKind(idx + 1, def.kind);
-        }
+        // if(def.kind !== undefined) {
+        //     lp.setColKind(idx + 1, def.kind);
+        // }
+        lp.setColKind(idx + 1, BV);
         if(def.min === undefined) {
             if(def.max === undefined) {
                 lp.setColBnds(idx + 1, FR, 0, 0);

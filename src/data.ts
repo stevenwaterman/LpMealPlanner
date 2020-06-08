@@ -14,5 +14,7 @@ type Recipe = {
     name: string;
 }
 export const recipes: Recipe[] = [
+    {name: "Cereal"},
+    {name: "Sandwich"},
     {name: "Stir Fry"}
 ]
