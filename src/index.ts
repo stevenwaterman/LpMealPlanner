@@ -1,27 +1,27 @@
-import glp from "GLPK";
-import {loadAux, loadMatrix, loadStruct} from "./util";
+import glp, {BV} from "GLPK";
+import {AuxVariableDefinition, loadAux, loadMatrix, loadStruct, StructVariableDefinition} from "./util";
+import {meals, recipes} from "./data";
 
 const lp = new glp.Problem();
 lp.setProbName("sample");
 lp.setObjDir(glp.MAX);
 
-loadStruct(lp, [
-    {name: "x1", min: 0, objectiveCoef: 10},
-    {name: "x2", min: 0, objectiveCoef: 6},
-    {name: "x3", min: 0, objectiveCoef: 4}
-]);
+const recipeStruct: StructVariableDefinition[] = recipes.flatMap(recipe => meals.map(meal => ({
+    name: `${recipe.name} for ${meal.day} ${meal.slot}`,
+    kind: BV,
+    objectiveCoef: 0
+})));
+loadStruct(lp, recipeStruct);
 
-loadAux(lp, [
-    {name: "p", max: 100},
-    {name: "q", max: 600},
-    {name: "r", max: 300}
-]);
+const mealAux: AuxVariableDefinition[] = meals.map(meal => ({
+    name: `${meal.day} ${meal.slot}`,
+    min: 1,
+    max: 1
+}));
+loadAux(lp, mealAux);
 
-loadMatrix(lp, [
-    [1, 1, 1],
-    [10, 4, 5],
-    [2, 2, 6]
-]);
+const matrixRows: number[][] = meals.map((row, rowIdx) => recipeStruct.map((_, colIdx) => (colIdx % meals.length) === rowIdx ? 1 : 0));
+loadMatrix(lp, matrixRows);
 
 //solve simplex asynchronously
 lp.simplex({},function(err){
@@ -30,11 +30,13 @@ lp.simplex({},function(err){
         return;
     }
     const objective = lp.getObjVal();
-    const x1 = lp.getColPrim(1);
-    const x2 = lp.getColPrim(2);
-    const x3 = lp.getColPrim(3);
-
-    console.log(`Objective: ${objective}`, `x1: ${x1}`, `x2: ${x2}`, `x3: ${x3}`);
+    recipeStruct.forEach(({name}, idx) => {
+        const used = lp.getColPrim(idx + 1);
+        if(used === 1) {
+            console.log(name);
+        }
+    })
+    console.log(`Objective: ${objective}`);
     console.log("Iterations: ", lp.getItCnt());
     lp.delete();
 });

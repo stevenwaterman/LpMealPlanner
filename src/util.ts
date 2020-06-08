@@ -1,4 +1,4 @@
-import {DB, FR, FX, LO, Problem, UP} from "GLPK";
+import {DB, FR, FX, LO, Problem, UP, VARIABLE_KIND} from "GLPK";
 
 type Row<T> = T[]
 type Matrix<T> = Row<T>[];
@@ -52,6 +52,7 @@ export function loadAux(lp: Problem, defs: AuxVariableDefinition[]) {
 
 export type StructVariableDefinition = AuxVariableDefinition & {
     objectiveCoef: number;
+    kind?: VARIABLE_KIND
 }
 
 export function loadStruct(lp: Problem, defs: StructVariableDefinition[]) {
@@ -59,6 +60,9 @@ export function loadStruct(lp: Problem, defs: StructVariableDefinition[]) {
     defs.forEach((def, idx) => {
         lp.setColName(idx + 1, def.name);
         lp.setObjCoef(idx + 1, def.objectiveCoef);
+        if(def.kind) {
+            lp.setColKind(idx + 1, def.kind);
+        }
         if(def.min === undefined) {
             if(def.max === undefined) {
                 lp.setColBnds(idx + 1, FR, 0, 0);

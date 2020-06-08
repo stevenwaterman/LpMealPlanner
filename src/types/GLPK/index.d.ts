@@ -198,6 +198,8 @@ declare module "GLPK" {
 
         setColName(idx: number, name: string): void;
 
+        setColKind(idx: number, kind: VARIABLE_KIND): void;
+
         setColBnds(idx: number, arg2: VARIABLE_BOUNDS_TYPE, min: number, max: number): void;
 
         setObjCoef(idx: number, coef: number): void;
