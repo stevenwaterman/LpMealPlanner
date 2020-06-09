@@ -1,11 +1,11 @@
-import glp, {BV} from "GLPK";
+import glp from "GLPK";
 import {
     AuxVariableDefinition,
     Constraint,
     loadProblem,
     StructVariableDefinition
 } from "./util";
-import {Day, days, meals, recipes, Slot, slotRequirements} from "./data";
+import {Day, days, meals, recipes, Slot, slotRequirements, nutritionRequirements} from "./data";
 
 const lp = new glp.Problem();
 lp.setProbName("sample");
@@ -19,67 +19,106 @@ type MealSlotAuxDef = AuxVariableDefinition & {
     slot: Slot
 }
 
-const auxDefs: MealSlotAuxDef[] = [];
+type NutritionAuxDef = AuxVariableDefinition & {
+    _brand: "NutritionAuxDef",
+    nutritionType: keyof typeof nutritionRequirements
+}
+
+type AuxDef = MealSlotAuxDef | NutritionAuxDef;
+
+const mealSlotAuxDefs: MealSlotAuxDef[] = [];
+const nutritionAuxDefs: NutritionAuxDef[] = [];
 const structDefs: StructVariableDefinition[] = [];
 const constraints: Constraint[] = [];
 
-meals.forEach((meal, idx) => {
+let auxDefIdx = 1;
+let structDefIdx = 1;
+
+meals.forEach((meal) => {
     const required = slotRequirements[meal.slot].required;
     const min = required ? 1 : 0;
-    auxDefs.push({
-        idx: idx + 1,
+    mealSlotAuxDefs.push({
+        _brand: "MealSlotAuxDef",
+        idx: auxDefIdx,
         name: `${meal.day} ${meal.slot}`,
         min,
         max: 1,
-        _brand: "MealSlotAuxDef",
         day: meal.day,
         slot: meal.slot
     });
-})
+    auxDefIdx++;
+});
 
-recipes.forEach((recipe, idx) => {
+nutritionAuxDefs.push({
+    _brand: "NutritionAuxDef",
+    idx: auxDefIdx,
+    name: "Calories Requirement",
+    nutritionType: "calories",
+    min: nutritionRequirements.calories.min * 7,
+    max: nutritionRequirements.calories.max * 7
+});
+auxDefIdx++;
+
+recipes.forEach((recipe) => {
     days.forEach(day => {
         recipe.allowedMeals.forEach(slot => {
             structDefs.push({
-                idx: idx + 1,
+                idx: structDefIdx,
                 name: `${recipe.name} for ${day} ${slot}`,
-                kind: BV,
+                kind: glp.BV,
+                min: 0,
+                max: 1,
                 objectiveCoef: 0
             });
 
-            auxDefs.filter(def => def.day === day && def.slot === slot).forEach(def => {
+            mealSlotAuxDefs.filter(def => def.day === day && def.slot === slot).forEach(def => {
                 constraints.push({
-                    structIdx: idx + 1,
+                    structIdx: structDefIdx,
                     auxIdx: def.idx,
                     coeff: 1
                 })
             })
+
+            nutritionAuxDefs.forEach(def => {
+                constraints.push({
+                    structIdx: structDefIdx,
+                    auxIdx: def.idx,
+                    coeff: recipe.nutrition[def.nutritionType]
+                })
+            })
+
+            structDefIdx++;
         })
     });
 })
 
-loadProblem(lp, structDefs, auxDefs, constraints);
+loadProblem(lp, structDefs, [...mealSlotAuxDefs, ...nutritionAuxDefs], constraints);
 
-lp.simplexSync({
-    presolve: glp.OFF
-});
-lp.intoptSync(null);
+lp.simplexSync({});
+lp.intoptSync({});
 
 console.log();
 
 structDefs.forEach(({name, idx}) => {
-    const used = lp.getColPrim(idx);
+    const used = lp.mipColVal(idx);
     if(used === 1){
-        console.log(name);
+        console.log(name, used);
     }
 });
+
+const calories = lp.mipRowVal(nutritionAuxDefs[0].idx);
+console.log("Calories", calories/7);
+
+// mealSlotAuxDefs.forEach(def =>
+//     console.log(`${def.name}: expected ${def.min}-${def.max}, was ${lp.mipRowVal(def.idx)}`)
+// })
 
 console.log();
 console.log(`Objective: ${lp.getObjVal()}`);
 console.log("Iterations: ", lp.getItCnt());
 
 console.log("status:", lp.mipStatus());
-console.log("feasible:", lp.mipStatus() == glp.FEAS);
-console.log("optimal:", lp.mipStatus() == glp.OPT);
+// console.log("feasible:", lp.mipStatus() == glp.FEAS);
+// console.log("optimal:", lp.mipStatus() == glp.OPT);
 lp.delete();
 

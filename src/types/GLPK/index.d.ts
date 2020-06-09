@@ -194,12 +194,12 @@ declare module "GLPK" {
         getNumInt(): number;
 
         intopt(options: {
-            cbFunc: (tree: Tree) => void;
-            cbReasons?: REASON_CODE_F
+            cbFunc?: (tree: Tree) => void;
+            cbReasons?: REASON_CODE_F;
         } | null, callback: (err: string | undefined, ret: number) => void): void;
 
         intoptSync(options: {
-            cbFunc: (tree: Tree) => void
+            cbFunc?: (tree: Tree) => void;
         } | null): void;
 
         mipObjVal(): number;
@@ -241,6 +241,9 @@ declare module "GLPK" {
         getItCnt(): number;
 
         mipStatus(): SOLUTION_STATUS;
+
+        mipRowVal(idx: number): number;
+        mipColVal(idx: number): number;
     }
 
     export class Mathprog {
