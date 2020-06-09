@@ -25,9 +25,13 @@ type MaxTimeAuxDef = AuxVariableDefinition & {
     day: Day
 }
 
-type NutritionAuxDef = AuxVariableDefinition & {
-    _brand: "NutritionAuxDef",
-    nutritionType: keyof typeof nutritionRequirements
+type DailyCaloriesDef = AuxVariableDefinition & {
+    _brand: "DailyCaloriesDef",
+    day: Day
+}
+
+type WeeklyCaloriesDef = AuxVariableDefinition & {
+    _brand: "WeeklyCaloriesDef"
 }
 
 type RecipeInSlotStructDef = StructVariableDefinition & {
@@ -40,7 +44,7 @@ type RecipeInSlotStructDef = StructVariableDefinition & {
 const mealSlotAuxDefs: MealSlotAuxDef[] = [];
 const dailyRecipeAuxDefs: DailyRecipeAuxDef[] = [];
 const maxTimeAuxDefs: MaxTimeAuxDef[] = [];
-const nutritionAuxDefs: NutritionAuxDef[] = [];
+const dailyCaloriesDefs: DailyCaloriesDef[] = [];
 
 const structDefs: RecipeInSlotStructDef[] = [];
 const constraints: Constraint[] = [];
@@ -87,14 +91,25 @@ days.forEach(day => {
     auxDefIdx++;
 })
 
-nutritionAuxDefs.push({
-    _brand: "NutritionAuxDef",
+days.forEach(day => {
+    dailyCaloriesDefs.push({
+        _brand: "DailyCaloriesDef",
+        idx: auxDefIdx,
+        name: `Calories eaten on ${day}`,
+        day,
+        min: nutritionRequirements.calories.day.min,
+        max: nutritionRequirements.calories.day.max
+    })
+    auxDefIdx++;
+})
+
+const weeklyCaloriesDef: WeeklyCaloriesDef = {
+    _brand: "WeeklyCaloriesDef",
     idx: auxDefIdx,
-    name: "Calories Requirement",
-    nutritionType: "calories",
-    min: nutritionRequirements.calories.min * 7,
-    max: nutritionRequirements.calories.max * 7
-});
+    name: "Total Calories",
+    min: nutritionRequirements.calories.week.min,
+    max: nutritionRequirements.calories.week.max
+};
 auxDefIdx++;
 
 recipes.forEach((recipe) => {
@@ -137,9 +152,17 @@ recipes.forEach((recipe) => {
                 })
             })
 
+            dailyCaloriesDefs.filter(def => def.day === day).forEach(def => {
+                constraints.push({
+                    structIdx: structDefIdx,
+                    auxIdx: def.idx,
+                    coeff: recipe.calories
+                })
+            });
+
             constraints.push({
                 structIdx: structDefIdx,
-                auxIdx: nutritionAuxDefs[0].idx,
+                auxIdx: weeklyCaloriesDef.idx,
                 coeff: recipe.calories
             })
 
@@ -148,24 +171,35 @@ recipes.forEach((recipe) => {
     })
 })
 
-loadProblem(lp, structDefs, [...mealSlotAuxDefs, ...dailyRecipeAuxDefs, ...maxTimeAuxDefs, ...nutritionAuxDefs], constraints);
+loadProblem(lp, structDefs, [...mealSlotAuxDefs, ...dailyRecipeAuxDefs, ...maxTimeAuxDefs, ...dailyCaloriesDefs, weeklyCaloriesDef], constraints);
 
 lp.simplexSync({});
 lp.intoptSync({});
 
 console.log();
 
+let lastDay: Day | null  = null;
 structDefs
     .sort((a, b) => slots.indexOf(a.slot) - slots.indexOf(b.slot))
     .sort((a, b) => days.indexOf(a.day) - days.indexOf(b.day))
-    .forEach(({name, idx}) => {
+    .forEach(({name, idx, day}) => {
+        if(lastDay === null || lastDay !== day) {
+            console.log();
+        }
+        lastDay = day;
+
         if (lp.mipColVal(idx) === 1) {
             console.log(name);
         }
     });
+console.log();
 
-const calories = lp.mipRowVal(nutritionAuxDefs[0].idx);
-console.log("Calories", calories / 7);
+dailyCaloriesDefs.forEach(def => {
+    console.log(`Calories eaten on ${def.day}: ${lp.mipRowVal(def.idx)}`)
+});
+const calories = lp.mipRowVal(weeklyCaloriesDef.idx);
+console.log("Average Calories", calories / 7);
+console.log();
 
 maxTimeAuxDefs.forEach(def => {
     console.log(`Time Spent on ${def.day}: ${lp.mipRowVal(def.idx)}`)

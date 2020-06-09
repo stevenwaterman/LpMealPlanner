@@ -19,8 +19,14 @@ export const maxTime: Record<Day, number> = {
 
 export const nutritionRequirements = {
     calories: {
-        min: 800,
-        max: 1500,
+        week: {
+            min: 1600 * 7,
+            max: 1800 * 7,
+        },
+        day: {
+            min: 1400,
+            max: 2000
+        }
     }
 }
 
