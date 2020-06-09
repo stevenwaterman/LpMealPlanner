@@ -211,6 +211,7 @@ declare module "GLPK" {
         printIpt(path: string, callback: (err: string | undefined) => void): void;
 
         getObjVal(): number;
+        mipObjVal(): number;
 
         setProbName(name: string): void;
 

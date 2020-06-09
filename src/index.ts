@@ -80,6 +80,7 @@ nutritionAuxDefs.push({
 auxDefIdx++;
 
 recipes.forEach((recipe) => {
+    const objCoeff = recipe.name === "Cake" ? 1 : 0;
     days.forEach(day => {
         recipe.allowedMeals.forEach(slot => {
             structDefs.push({
@@ -88,7 +89,7 @@ recipes.forEach((recipe) => {
                 kind: glp.BV,
                 min: 0,
                 max: 1,
-                objectiveCoef: 0
+                objectiveCoef: objCoeff
             });
 
             mealSlotAuxDefs.filter(def => def.day === day && def.slot === slot).forEach(def => {
@@ -146,7 +147,7 @@ console.log("Calories", calories/7);
 // )
 
 console.log();
-console.log(`Objective: ${lp.getObjVal()}`);
+console.log(`Objective: ${lp.mipObjVal()}`);
 console.log("Iterations: ", lp.getItCnt());
 
 console.log("status:", lp.mipStatus());

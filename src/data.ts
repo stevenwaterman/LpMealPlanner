@@ -74,7 +74,7 @@ export const recipes: Recipe[] = [
 
 export const nutritionRequirements = {
     calories: {
-        min: 1500,
-        max: 2700
+        min: 800,
+        max: 1200,
     }
 }
