@@ -5,25 +5,16 @@ export type Meal = {
     day: Day;
     slot: Slot;
     required: boolean;
-    maxTime: number;
 }
 
-const maxTimeMultiplier: Record<Day, number> = {
-    MON: 0.8,
-    TUE: 1,
-    WED: 1,
-    THU: 1,
-    FRI: 1.1,
-    SAT: 1.5,
-    SUN: 2
-}
-
-const maxTime: Record<Slot, number> = {
-    BREAKFAST: 15,
-    LUNCH: 30,
-    STARTER: 15,
-    DINNER: 60,
-    DESSERT: 20
+export const maxTime: Record<Day, number> = {
+    MON: 60,
+    TUE: 75,
+    WED: 75,
+    THU: 75,
+    FRI: 90,
+    SAT: 120,
+    SUN: 180
 }
 
 const optional: Array<[Day, Slot]> = [
@@ -51,7 +42,6 @@ export const meals: Meal[] = days.flatMap(day => slots.map(slot => ({
     day,
     slot,
     required: optional.every(([_day, _slot]) => day !== _day || slot !== _slot),
-    maxTime: maxTime[slot] * maxTimeMultiplier[day]
 })));
 
 export const nutritionRequirements = {
