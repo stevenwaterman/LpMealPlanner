@@ -5,7 +5,7 @@ import {
     loadProblem,
     StructVariableDefinition
 } from "./util";
-import {Day, days, meals, recipes, Slot} from "./data";
+import {Day, days, meals, recipes, Slot, slotRequirements} from "./data";
 
 const lp = new glp.Problem();
 lp.setProbName("sample");
@@ -24,10 +24,12 @@ const structDefs: StructVariableDefinition[] = [];
 const constraints: Constraint[] = [];
 
 meals.forEach((meal, idx) => {
+    const required = slotRequirements[meal.slot].required;
+    const min = required ? 1 : 0;
     auxDefs.push({
         idx: idx + 1,
         name: `${meal.day} ${meal.slot}`,
-        min: 1,
+        min,
         max: 1,
         _brand: "MealSlotAuxDef",
         day: meal.day,
