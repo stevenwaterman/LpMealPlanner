@@ -34,7 +34,7 @@ type Nutrition = {
 }
 
 
-type Recipe = {
+export type Recipe = {
     name: string;
     allowedMeals: Slot[];
     nutrition: Nutrition;
@@ -64,7 +64,7 @@ export const recipes: Recipe[] = [
 
 export const nutritionRequirements = {
     calories: {
-        min: 2200,
+        min: 1500,
         max: 2700
     }
 }
