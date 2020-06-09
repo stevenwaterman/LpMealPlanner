@@ -1,6 +1,7 @@
 import glp from "GLPK";
 import {AuxVariableDefinition, Constraint, loadProblem, StructVariableDefinition} from "./util";
 import {Day, days, maxTime, meals, nutritionRequirements, previousDay, Recipe, recipes, Slot, slots} from "./data";
+import {table} from "table";
 
 const lp = new glp.Problem();
 lp.setProbName("sample");
@@ -183,7 +184,7 @@ recipes.forEach((recipe) => {
 
             structDefIdx++;
 
-            if(day !== "MON") {
+            if (day !== "MON") {
                 lockStructDefs.push({
                     _brand: "LockStructDef",
                     day,
@@ -224,9 +225,9 @@ recipes.forEach((recipe) => {
                 // Add 1 if we had it yesterday
                 slots.forEach(slot => {
                     const yesterday = previousDay(day);
-                    if(yesterday !== undefined) {
+                    if (yesterday !== undefined) {
                         const yesterdayStruct: RecipeInSlotStructDef | undefined = recipeStructDefs.find(def => def.day === yesterday && def.slot === slot && def.recipe === recipe);
-                        if(yesterdayStruct !== undefined) {
+                        if (yesterdayStruct !== undefined) {
                             constraints.push({
                                 structIdx: yesterdayStruct.idx,
                                 auxIdx: auxDefIdx,
@@ -250,44 +251,39 @@ loadProblem(lp, [...recipeStructDefs, ...lockStructDefs], [...mealSlotAuxDefs, .
 lp.simplexSync({});
 lp.intoptSync({});
 
-console.log();
-
-let lastDay: Day | null  = null;
-recipeStructDefs
-    .sort((a, b) => slots.indexOf(a.slot) - slots.indexOf(b.slot))
-    .sort((a, b) => days.indexOf(a.day) - days.indexOf(b.day))
-    .forEach(({name, idx, day}) => {
-        if(lastDay === null || lastDay !== day) {
-            console.log();
+const tableData: string[][] = [
+    ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", ""],
+    ["Breakfast", "", "", "", "", "", "", "", ""],
+    ["Lunch", "", "", "", "", "", "", "", ""],
+    ["Starter", "", "", "", "", "", "", "", ""],
+    ["Dinner", "", "", "", "", "", "", "", ""],
+    ["Dessert", "", "", "", "", "", "", "", ""],
+    ["Calories", "", "", "", "", "", "", "", ""],
+    ["Time Spent", "", "", "", "", "", "", "", ""]
+]
+slots.forEach((slot, yIdx) => {
+    days.forEach((day, xIdx) => {
+        const foundDef = recipeStructDefs
+            .filter(def => def.slot === slot && def.day === day)
+            .find(def => lp.mipColVal(def.idx) === 1)
+        if (foundDef !== undefined) {
+            tableData[yIdx + 1][xIdx + 1] = foundDef.recipe.name
         }
-        lastDay = day;
-
-        if (lp.mipColVal(idx) === 1) {
-            console.log(name);
-        }
-    });
-console.log();
-
-dailyCaloriesDefs.forEach(def => {
-    console.log(`Calories eaten on ${def.day}: ${lp.mipRowVal(def.idx)}`)
+    })
 });
-const calories = lp.mipRowVal(weeklyCaloriesDef.idx);
-console.log("Average Calories", calories / 7);
-console.log();
+dailyCaloriesDefs.forEach(def => {
+    const cal = lp.mipRowVal(def.idx);
+    const idx = days.indexOf(def.day) + 1;
+    tableData[6][idx] = cal.toString();
+})
+tableData[6][8] = `Average: ${(lp.mipRowVal(weeklyCaloriesDef.idx)/7).toFixed()}`;
 
 maxTimeAuxDefs.forEach(def => {
-    console.log(`Time Spent on ${def.day}: ${lp.mipRowVal(def.idx)}`)
+    const time = lp.mipRowVal(def.idx);
+    const idx = days.indexOf(def.day) + 1;
+    tableData[7][idx] = time.toString();
 })
-
-
-// mealSlotAuxDefs.forEach(def =>
-//     console.log(`${def.name}: expected ${def.min}-${def.max}, was ${lp.mipRowVal(def.idx)}`)
-// )
-//
-// dailyRecipeAuxDefs.forEach(def =>
-//     console.log(`${def.name}: expected ${def.min}-${def.max}, was ${lp.mipRowVal(def.idx)}`)
-// )
-
+console.log(table(tableData));
 console.log();
 console.log(`Objective: ${lp.mipObjVal()}`);
 console.log("Iterations: ", lp.getItCnt());
