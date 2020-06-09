@@ -31,6 +31,9 @@ export const nutritionRequirements = {
 }
 
 export const days: Day[] = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+export function previousDay(day: Day): Day | undefined {
+    return days[days.indexOf(day) - 1];
+}
 export const slots: Slot[] = ["BREAKFAST", "LUNCH", "STARTER", "DINNER", "DESSERT"];
 export const meals: Meal[] = [
     { day: "MON", slot: "BREAKFAST", required: true },

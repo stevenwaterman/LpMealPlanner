@@ -1,6 +1,6 @@
 import glp from "GLPK";
 import {AuxVariableDefinition, Constraint, loadProblem, StructVariableDefinition} from "./util";
-import {Day, days, maxTime, meals, nutritionRequirements, Recipe, recipes, Slot, slots} from "./data";
+import {Day, days, maxTime, meals, nutritionRequirements, previousDay, Recipe, recipes, Slot, slots} from "./data";
 
 const lp = new glp.Problem();
 lp.setProbName("sample");
@@ -34,6 +34,12 @@ type WeeklyCaloriesDef = AuxVariableDefinition & {
     _brand: "WeeklyCaloriesDef"
 }
 
+type UnlockedAuxDef = AuxVariableDefinition & {
+    day: Day,
+    slot: Slot,
+    recipe: Recipe
+}
+
 type RecipeInSlotStructDef = StructVariableDefinition & {
     _brand: "RecipeInSlotStructDef",
     recipe: Recipe,
@@ -41,12 +47,21 @@ type RecipeInSlotStructDef = StructVariableDefinition & {
     slot: Slot
 }
 
+type LockStructDef = StructVariableDefinition & {
+    _brand: "LockStructDef",
+    day: Day,
+    slot: Slot,
+    recipe: Recipe
+}
+
 const mealSlotAuxDefs: MealSlotAuxDef[] = [];
 const dailyRecipeAuxDefs: DailyRecipeAuxDef[] = [];
 const maxTimeAuxDefs: MaxTimeAuxDef[] = [];
 const dailyCaloriesDefs: DailyCaloriesDef[] = [];
+const unlockedAuxDefs: UnlockedAuxDef[] = [];
 
-const structDefs: RecipeInSlotStructDef[] = [];
+const recipeStructDefs: RecipeInSlotStructDef[] = [];
+const lockStructDefs: LockStructDef[] = []
 const constraints: Constraint[] = [];
 
 let auxDefIdx = 1;
@@ -115,7 +130,7 @@ auxDefIdx++;
 recipes.forEach((recipe) => {
     meals.forEach(({day, slot}) => {
         if (recipe.allowedSlots.includes(slot)) {
-            structDefs.push({
+            recipeStructDefs.push({
                 _brand: "RecipeInSlotStructDef",
                 idx: structDefIdx,
                 name: `${recipe.name} for ${day} ${slot}`,
@@ -167,11 +182,70 @@ recipes.forEach((recipe) => {
             })
 
             structDefIdx++;
+
+            if(day !== "MON") {
+                lockStructDefs.push({
+                    _brand: "LockStructDef",
+                    day,
+                    recipe,
+                    slot,
+                    idx: structDefIdx,
+                    name: `Unlocked ability to have ${recipe.name} on ${day} ${slot}`,
+                    objectiveCoef: -1,
+                    min: 0,
+                    max: 1,
+                    kind: glp.BV
+                });
+
+                unlockedAuxDefs.push({
+                    day,
+                    idx: auxDefIdx,
+                    name: `Illegal lock setup on ${day} ${slot} (${recipe.name})`,
+                    recipe,
+                    slot,
+                    max: 1
+                })
+
+
+                // Subtract 2 if unlocked
+                constraints.push({
+                    structIdx: structDefIdx,
+                    auxIdx: auxDefIdx,
+                    coeff: -1
+                });
+
+                // Add 1 if we had it today
+                constraints.push({
+                    structIdx: structDefIdx - 1,
+                    auxIdx: auxDefIdx,
+                    coeff: 1
+                })
+
+                // Add 1 if we had it yesterday
+                slots.forEach(slot => {
+                    const yesterday = previousDay(day);
+                    if(yesterday !== undefined) {
+                        const yesterdayStruct: RecipeInSlotStructDef | undefined = recipeStructDefs.find(def => def.day === yesterday && def.slot === slot && def.recipe === recipe);
+                        if(yesterdayStruct !== undefined) {
+                            constraints.push({
+                                structIdx: yesterdayStruct.idx,
+                                auxIdx: auxDefIdx,
+                                coeff: 1
+                            })
+                        }
+                    }
+                })
+
+                auxDefIdx++;
+                structDefIdx++;
+            }
+
+
         }
     })
 })
 
-loadProblem(lp, structDefs, [...mealSlotAuxDefs, ...dailyRecipeAuxDefs, ...maxTimeAuxDefs, ...dailyCaloriesDefs, weeklyCaloriesDef], constraints);
+loadProblem(lp, [...recipeStructDefs, ...lockStructDefs], [...mealSlotAuxDefs, ...dailyRecipeAuxDefs, ...maxTimeAuxDefs, ...dailyCaloriesDefs, weeklyCaloriesDef, ...unlockedAuxDefs], constraints);
 
 lp.simplexSync({});
 lp.intoptSync({});
@@ -179,7 +253,7 @@ lp.intoptSync({});
 console.log();
 
 let lastDay: Day | null  = null;
-structDefs
+recipeStructDefs
     .sort((a, b) => slots.indexOf(a.slot) - slots.indexOf(b.slot))
     .sort((a, b) => days.indexOf(a.day) - days.indexOf(b.day))
     .forEach(({name, idx, day}) => {
