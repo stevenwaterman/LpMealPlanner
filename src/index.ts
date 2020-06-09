@@ -1,6 +1,11 @@
 import glp, {BV} from "GLPK";
-import {AuxVariableDefinition, loadAux, loadMatrix, loadStruct, StructVariableDefinition} from "./util";
-import {meals, recipes} from "./data";
+import {
+    AuxVariableDefinition,
+    Constraint,
+    loadProblem,
+    StructVariableDefinition
+} from "./util";
+import {Day, days, meals, recipes, Slot} from "./data";
 
 const lp = new glp.Problem();
 lp.setProbName("sample");
@@ -8,24 +13,51 @@ lp.setObjDir(glp.MAX);
 glp.termOutput(true);
 lp.scaleSync(glp.SF_AUTO);
 
-const recipeStruct: StructVariableDefinition[] = recipes.flatMap(recipe => meals.map(meal => ({
-    name: `${recipe.name} for ${meal.day} ${meal.slot}`,
-    kind: BV,
-    objectiveCoef: 0
-})));
-loadStruct(lp, recipeStruct);
+type MealSlotAuxDef = AuxVariableDefinition & {
+    _brand: "MealSlotAuxDef",
+    day: Day,
+    slot: Slot
+}
 
-const mealAux: AuxVariableDefinition[] = meals.map(meal => ({
-    name: `${meal.day} ${meal.slot}`,
-    min: 1,
-    max: 1
-}));
-loadAux(lp, mealAux);
+const auxDefs: MealSlotAuxDef[] = [];
+const structDefs: StructVariableDefinition[] = [];
+const constraints: Constraint[] = [];
 
-const matrixRows: number[][] = meals.map((row, rowIdx) => recipeStruct.map((_, colIdx) => (colIdx % meals.length) === rowIdx ? 1 : 0));
-loadMatrix(lp, matrixRows);
+meals.forEach((meal, idx) => {
+    auxDefs.push({
+        idx: idx + 1,
+        name: `${meal.day} ${meal.slot}`,
+        min: 1,
+        max: 1,
+        _brand: "MealSlotAuxDef",
+        day: meal.day,
+        slot: meal.slot
+    });
+})
 
-//solve simplex asynchronously
+recipes.forEach((recipe, idx) => {
+    days.forEach(day => {
+        recipe.allowedMeals.forEach(slot => {
+            structDefs.push({
+                idx: idx + 1,
+                name: `${recipe.name} for ${day} ${slot}`,
+                kind: BV,
+                objectiveCoef: 0
+            });
+
+            auxDefs.filter(def => def.day === day && def.slot === slot).forEach(def => {
+                constraints.push({
+                    structIdx: idx + 1,
+                    auxIdx: def.idx,
+                    coeff: 1
+                })
+            })
+        })
+    });
+})
+
+loadProblem(lp, structDefs, auxDefs, constraints);
+
 lp.simplexSync({
     presolve: glp.OFF
 });
@@ -33,8 +65,8 @@ lp.intoptSync(null);
 
 console.log();
 
-recipeStruct.forEach(({name}, idx) => {
-    const used = lp.getColPrim(idx + 1);
+structDefs.forEach(({name, idx}) => {
+    const used = lp.getColPrim(idx);
     if(used === 1){
         console.log(name);
     }
