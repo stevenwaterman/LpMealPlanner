@@ -17,39 +17,60 @@ export const maxTime: Record<Day, number> = {
     SUN: 180
 }
 
-const optional: Array<[Day, Slot]> = [
-    ["MON", "STARTER"],
-    ["MON", "DESSERT"],
-    ["TUE", "STARTER"],
-    ["TUE", "DESSERT"],
-    ["WED", "STARTER"],
-    ["WED", "DESSERT"],
-    ["THU", "STARTER"],
-    ["THU", "DESSERT"],
-    ["FRI", "STARTER"],
-    ["FRI", "DESSERT"],
-    ["SAT", "BREAKFAST"],
-    ["SAT", "STARTER"],
-    ["SAT", "DESSERT"],
-    ["SUN", "BREAKFAST"],
-    ["SUN", "STARTER"],
-    ["SUN", "DESSERT"]
-];
-
-export const days: Day[] = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
-export const slots: Slot[] = ["BREAKFAST", "LUNCH", "STARTER", "DINNER", "DESSERT"];
-export const meals: Meal[] = days.flatMap(day => slots.map(slot => ({
-    day,
-    slot,
-    required: optional.every(([_day, _slot]) => day !== _day || slot !== _slot),
-})));
-
 export const nutritionRequirements = {
     calories: {
         min: 800,
-        max: 2000,
+        max: 1500,
     }
 }
+
+export const days: Day[] = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+export const slots: Slot[] = ["BREAKFAST", "LUNCH", "STARTER", "DINNER", "DESSERT"];
+export const meals: Meal[] = [
+    { day: "MON", slot: "BREAKFAST", required: true },
+    { day: "MON", slot: "LUNCH", required: true },
+    { day: "MON", slot: "STARTER", required: false },
+    { day: "MON", slot: "DINNER", required: true },
+    { day: "MON", slot: "DESSERT", required: false },
+
+    { day: "TUE", slot: "BREAKFAST", required: true },
+    { day: "TUE", slot: "LUNCH", required: true },
+    { day: "TUE", slot: "STARTER", required: false },
+    { day: "TUE", slot: "DINNER", required: true },
+    { day: "TUE", slot: "DESSERT", required: false },
+
+    { day: "WED", slot: "BREAKFAST", required: true },
+    { day: "WED", slot: "LUNCH", required: true },
+    { day: "WED", slot: "STARTER", required: false },
+    { day: "WED", slot: "DINNER", required: true },
+    { day: "WED", slot: "DESSERT", required: false },
+
+    { day: "THU", slot: "BREAKFAST", required: true },
+    { day: "THU", slot: "LUNCH", required: true },
+    { day: "THU", slot: "STARTER", required: false },
+    { day: "THU", slot: "DINNER", required: true },
+    { day: "THU", slot: "DESSERT", required: false },
+
+    { day: "FRI", slot: "BREAKFAST", required: true },
+    { day: "FRI", slot: "LUNCH", required: true },
+    { day: "FRI", slot: "STARTER", required: false },
+    { day: "FRI", slot: "DINNER", required: true },
+    { day: "FRI", slot: "DESSERT", required: false },
+
+    { day: "SAT", slot: "BREAKFAST", required: false },
+    { day: "SAT", slot: "LUNCH", required: true },
+    { day: "SAT", slot: "STARTER", required: false },
+    { day: "SAT", slot: "DINNER", required: true },
+    { day: "SAT", slot: "DESSERT", required: false },
+
+    { day: "SUN", slot: "BREAKFAST", required: false },
+    { day: "SUN", slot: "LUNCH", required: true },
+    { day: "SUN", slot: "STARTER", required: false },
+    { day: "SUN", slot: "DINNER", required: true },
+    { day: "SUN", slot: "DESSERT", required: false },
+]
+
+
 
 export type Recipe = {
     name: string;
