@@ -31,12 +31,16 @@ lp.simplexSync({
 });
 lp.intoptSync(null);
 
+console.log();
+
 recipeStruct.forEach(({name}, idx) => {
-    console.log(name, lp.getColPrim(idx + 1));
+    const used = lp.getColPrim(idx + 1);
+    if(used === 1){
+        console.log(name);
+    }
 });
-mealAux.forEach(({name}, idx) => {
-    console.log(name, lp.getRowPrim(idx + 1));
-})
+
+console.log();
 console.log(`Objective: ${lp.getObjVal()}`);
 console.log("Iterations: ", lp.getItCnt());
 

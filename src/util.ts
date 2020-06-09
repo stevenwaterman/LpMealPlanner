@@ -61,10 +61,9 @@ export function loadStruct(lp: Problem, defs: StructVariableDefinition[]) {
     defs.forEach((def, idx) => {
         lp.setColName(idx + 1, def.name);
         lp.setObjCoef(idx + 1, def.objectiveCoef);
-        // if(def.kind !== undefined) {
-        //     lp.setColKind(idx + 1, def.kind);
-        // }
-        lp.setColKind(idx + 1, BV);
+        if(def.kind !== undefined) {
+            lp.setColKind(idx + 1, def.kind);
+        }
         if(def.min === undefined) {
             if(def.max === undefined) {
                 lp.setColBnds(idx + 1, FR, 0, 0);
