@@ -5,7 +5,7 @@ import {
     loadProblem,
     StructVariableDefinition
 } from "./util";
-import {Day, days, meals, recipes, Slot, slotRequirements, nutritionRequirements, Recipe} from "./data";
+import {Day, days, meals, recipes, Slot, nutritionRequirements, Recipe} from "./data";
 
 const lp = new glp.Problem();
 lp.setProbName("sample");
@@ -41,8 +41,7 @@ let auxDefIdx = 1;
 let structDefIdx = 1;
 
 meals.forEach((meal) => {
-    const required = slotRequirements[meal.slot].required;
-    const min = required ? 1 : undefined;
+    const min = meal.required ? 1 : undefined;
     mealSlotAuxDefs.push({
         _brand: "MealSlotAuxDef",
         idx: auxDefIdx,
@@ -80,45 +79,44 @@ nutritionAuxDefs.push({
 auxDefIdx++;
 
 recipes.forEach((recipe) => {
-    const objCoeff = recipe.name === "Cake" ? 1 : 0;
-    days.forEach(day => {
-        recipe.allowedMeals.forEach(slot => {
-            structDefs.push({
-                idx: structDefIdx,
-                name: `${recipe.name} for ${day} ${slot}`,
-                kind: glp.BV,
-                min: 0,
-                max: 1,
-                objectiveCoef: objCoeff
-            });
+    meals.forEach(({day, slot, maxTime}) => {
+        if(recipe.allowedSlots.includes(slot)) {
+            if(recipe.time <= maxTime) {
+                structDefs.push({
+                    idx: structDefIdx,
+                    name: `${recipe.name} for ${day} ${slot}`,
+                    kind: glp.BV,
+                    min: 0,
+                    max: 1,
+                    objectiveCoef: recipe.rating
+                });
 
-            mealSlotAuxDefs.filter(def => def.day === day && def.slot === slot).forEach(def => {
+                mealSlotAuxDefs.filter(def => def.day === day && def.slot === slot).forEach(def => {
+                    constraints.push({
+                        structIdx: structDefIdx,
+                        auxIdx: def.idx,
+                        coeff: 1
+                    })
+                })
+
+                dailyRecipeAuxDefs.filter(def => def.day === day && def.recipe === recipe).forEach(def => {
+                    constraints.push({
+                        structIdx: structDefIdx,
+                        auxIdx: def.idx,
+                        coeff: 1
+                    })
+                })
+
                 constraints.push({
                     structIdx: structDefIdx,
-                    auxIdx: def.idx,
-                    coeff: 1
+                    auxIdx: nutritionAuxDefs[0].idx,
+                    coeff: recipe.calories
                 })
-            })
 
-            dailyRecipeAuxDefs.filter(def => def.day === day && def.recipe === recipe).forEach(def => {
-                constraints.push({
-                    structIdx: structDefIdx,
-                    auxIdx: def.idx,
-                    coeff: 1
-                })
-            })
-
-            nutritionAuxDefs.forEach(def => {
-                constraints.push({
-                    structIdx: structDefIdx,
-                    auxIdx: def.idx,
-                    coeff: recipe.nutrition[def.nutritionType]
-                })
-            });
-
-            structDefIdx++;
-        })
-    });
+                structDefIdx++;
+            }
+        }
+    })
 })
 
 loadProblem(lp, structDefs, [...mealSlotAuxDefs, ...dailyRecipeAuxDefs, ...nutritionAuxDefs], constraints);
