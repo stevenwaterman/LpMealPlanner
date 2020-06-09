@@ -130,20 +130,20 @@ console.log();
 structDefs.forEach(({name, idx}) => {
     const used = lp.mipColVal(idx);
     if(used === 1){
-        console.log(name, used);
+        console.log(name);
     }
 });
 
 const calories = lp.mipRowVal(nutritionAuxDefs[0].idx);
 console.log("Calories", calories/7);
 
-mealSlotAuxDefs.forEach(def =>
-    console.log(`${def.name}: expected ${def.min}-${def.max}, was ${lp.mipRowVal(def.idx)}`)
-)
-
-dailyRecipeAuxDefs.forEach(def =>
-    console.log(`${def.name}: expected ${def.min}-${def.max}, was ${lp.mipRowVal(def.idx)}`)
-)
+// mealSlotAuxDefs.forEach(def =>
+//     console.log(`${def.name}: expected ${def.min}-${def.max}, was ${lp.mipRowVal(def.idx)}`)
+// )
+//
+// dailyRecipeAuxDefs.forEach(def =>
+//     console.log(`${def.name}: expected ${def.min}-${def.max}, was ${lp.mipRowVal(def.idx)}`)
+// )
 
 console.log();
 console.log(`Objective: ${lp.getObjVal()}`);

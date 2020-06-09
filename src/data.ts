@@ -42,22 +42,32 @@ export type Recipe = {
 export const recipes: Recipe[] = [
     {
         name: "Cereal", allowedMeals: ["BREAKFAST"], nutrition: {
-            calories: 300
+            calories: 254
+        }
+    },
+    {
+        name: "Avocado Toast", allowedMeals: ["BREAKFAST", "LUNCH"], nutrition: {
+            calories: 378
         }
     },
     {
         name: "Sandwich", allowedMeals: ["LUNCH", "DINNER"], nutrition: {
-            calories: 550
+            calories: 511
         }
     },
     {
         name: "Stir Fry", allowedMeals: ["LUNCH", "DINNER"], nutrition: {
-            calories: 820
+            calories: 355
+        }
+    },
+    {
+        name: "Fish & Chips", allowedMeals: ["DINNER"], nutrition: {
+            calories: 842
         }
     },
     {
         name: "Cake", allowedMeals: ["DESSERT"], nutrition: {
-            calories: 435
+            calories: 229
         }
     }
 ]
