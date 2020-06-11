@@ -1,295 +1,167 @@
 import glp from "GLPK";
-import {AuxVariableDefinition, Constraint, loadProblem, StructVariableDefinition} from "./util";
-import {Day, days, maxTime, meals, nutritionRequirements, previousDay, Recipe, recipes, Slot, slots} from "./data";
-import {table} from "table";
+import {loadProblem, newConstraint, newVariable,} from "./util";
+import {days, slots} from "./data";
+import {printTable} from "./print";
+import {calories, maxTime, mealRequired, recipes} from "./inputs";
+
+/*
+Versions:
+
+1. Eaten variable per day x slot x recipe, bound 0..1, with objective value
+- should show many meals being eaten per slot (bad)
+
+2. Only allow 1 meal per slot
+- should show avocado toast for breakfast and lunch each day (bad)
+
+3. Only allow recipe once per day
+- should show same thing being eaten each day
+
+4. Max time
+- should show lots of high calorie desserts
+
+5. Daily calories
+- should show lack of variation
+
+6. Weekly calories
+- should show more variation, but low-calorie recipes not chosen very often
+
+7. Portions
+- low-calorie recipes chosen more often
+
+ */
 
 const lp = new glp.Problem();
-lp.setProbName("sample");
+lp.setProbName("Meal Planning");
 lp.setObjDir(glp.MAX);
-glp.termOutput(true);
-lp.scaleSync(glp.SF_AUTO);
 
-type MealSlotAuxDef = AuxVariableDefinition & {
-    _brand: "MealSlotAuxDef",
-    day: Day,
-    slot: Slot
-}
+for (let day of days) {
+    for (let recipe of recipes) {
+        for (let slot of recipe.allowedSlots) {
+            const portions = newVariable(
+                `Portions of ${recipe.name} for ${day} ${slot}`,
+                {type: "portions", day, slot, recipe},
+                {
+                    min: 0,
+                    max: recipe.portions.max,
+                    allowDecimal: recipe.portions.allowDecimal
+                }
+            )
 
-type DailyRecipeAuxDef = AuxVariableDefinition & {
-    _brand: "DailyRecipeAuxDef",
-    day: Day,
-    recipe: Recipe
-}
-
-type MaxTimeAuxDef = AuxVariableDefinition & {
-    _brand: "MaxTimeAuxDef",
-    day: Day
-}
-
-type DailyCaloriesDef = AuxVariableDefinition & {
-    _brand: "DailyCaloriesDef",
-    day: Day
-}
-
-type WeeklyCaloriesDef = AuxVariableDefinition & {
-    _brand: "WeeklyCaloriesDef"
-}
-
-type UnlockedAuxDef = AuxVariableDefinition & {
-    day: Day,
-    slot: Slot,
-    recipe: Recipe
-}
-
-type RecipeInSlotStructDef = StructVariableDefinition & {
-    _brand: "RecipeInSlotStructDef",
-    recipe: Recipe,
-    day: Day,
-    slot: Slot
-}
-
-type LockStructDef = StructVariableDefinition & {
-    _brand: "LockStructDef",
-    day: Day,
-    slot: Slot,
-    recipe: Recipe
-}
-
-const mealSlotAuxDefs: MealSlotAuxDef[] = [];
-const dailyRecipeAuxDefs: DailyRecipeAuxDef[] = [];
-const maxTimeAuxDefs: MaxTimeAuxDef[] = [];
-const dailyCaloriesDefs: DailyCaloriesDef[] = [];
-const unlockedAuxDefs: UnlockedAuxDef[] = [];
-
-const recipeStructDefs: RecipeInSlotStructDef[] = [];
-const lockStructDefs: LockStructDef[] = []
-const constraints: Constraint[] = [];
-
-let auxDefIdx = 1;
-let structDefIdx = 1;
-
-meals.forEach((meal) => {
-    const min = meal.required ? 1 : undefined;
-    mealSlotAuxDefs.push({
-        _brand: "MealSlotAuxDef",
-        idx: auxDefIdx,
-        name: `${meal.day} ${meal.slot}`,
-        min,
-        max: 1,
-        day: meal.day,
-        slot: meal.slot
-    });
-    auxDefIdx++;
-});
-
-days.forEach(day => {
-    recipes.forEach(recipe => {
-        dailyRecipeAuxDefs.push({
-            _brand: "DailyRecipeAuxDef",
-            idx: auxDefIdx,
-            name: `${recipe.name} on ${day}`,
-            max: 1,
-            day,
-            recipe
-        });
-        auxDefIdx++;
-    })
-})
-
-days.forEach(day => {
-    maxTimeAuxDefs.push({
-        _brand: "MaxTimeAuxDef",
-        idx: auxDefIdx,
-        name: `Time spent on ${day}`,
-        day,
-        max: maxTime[day]
-    })
-    auxDefIdx++;
-})
-
-days.forEach(day => {
-    dailyCaloriesDefs.push({
-        _brand: "DailyCaloriesDef",
-        idx: auxDefIdx,
-        name: `Calories eaten on ${day}`,
-        day,
-        min: nutritionRequirements.calories.day.min,
-        max: nutritionRequirements.calories.day.max
-    })
-    auxDefIdx++;
-})
-
-const weeklyCaloriesDef: WeeklyCaloriesDef = {
-    _brand: "WeeklyCaloriesDef",
-    idx: auxDefIdx,
-    name: "Total Calories",
-    min: nutritionRequirements.calories.week.min,
-    max: nutritionRequirements.calories.week.max
-};
-auxDefIdx++;
-
-recipes.forEach((recipe) => {
-    meals.forEach(({day, slot}) => {
-        if (recipe.allowedSlots.includes(slot)) {
-            recipeStructDefs.push({
-                _brand: "RecipeInSlotStructDef",
-                idx: structDefIdx,
-                name: `${recipe.name} for ${day} ${slot}`,
-                kind: glp.BV,
-                min: 0,
-                max: 1,
-                objectiveCoef: recipe.rating,
-                recipe,
-                day,
-                slot
-            });
-
-            mealSlotAuxDefs.filter(def => def.day === day && def.slot === slot).forEach(def => {
-                constraints.push({
-                    structIdx: structDefIdx,
-                    auxIdx: def.idx,
-                    coeff: 1
-                })
-            })
-
-            dailyRecipeAuxDefs.filter(def => def.day === day && def.recipe === recipe).forEach(def => {
-                constraints.push({
-                    structIdx: structDefIdx,
-                    auxIdx: def.idx,
-                    coeff: 1
-                })
-            })
-
-            maxTimeAuxDefs.filter(def => def.day === day).forEach(def => {
-                constraints.push({
-                    structIdx: structDefIdx,
-                    auxIdx: def.idx,
-                    coeff: recipe.time
-                })
-            })
-
-            dailyCaloriesDefs.filter(def => def.day === day).forEach(def => {
-                constraints.push({
-                    structIdx: structDefIdx,
-                    auxIdx: def.idx,
-                    coeff: recipe.calories
-                })
-            });
-
-            constraints.push({
-                structIdx: structDefIdx,
-                auxIdx: weeklyCaloriesDef.idx,
-                coeff: recipe.calories
-            })
-
-            structDefIdx++;
-
-            if (day !== "MON") {
-                lockStructDefs.push({
-                    _brand: "LockStructDef",
-                    day,
-                    recipe,
-                    slot,
-                    idx: structDefIdx,
-                    name: `Unlocked ability to have ${recipe.name} on ${day} ${slot}`,
-                    objectiveCoef: -1,
+            const eaten = newVariable(
+                `Ate ${recipe.name} for ${day} ${slot}`,
+                {type: "eaten", day, slot, recipe},
+                {
                     min: 0,
                     max: 1,
-                    kind: glp.BV
-                });
+                    allowDecimal: false
+                },
+                recipe.rating
+            )
 
-                unlockedAuxDefs.push({
-                    day,
-                    idx: auxDefIdx,
-                    name: `Illegal lock setup on ${day} ${slot} (${recipe.name})`,
-                    recipe,
-                    slot,
-                    max: 1
-                })
+            // Portions > 0 iff eaten === 1
+            newConstraint(
+                `${eaten.name} only if portions >= 0`,
+                {min: 0},
+                [
+                    [1000, portions],
+                    [-1, eaten]
+                ]
+            )
+            newConstraint(
+                `${portions.name} only if eaten == 1`,
+                {min: 0},
+                [
+                    [-1, portions],
+                    [1000, eaten]
+                ]
+            )
 
-
-                // Subtract 2 if unlocked
-                constraints.push({
-                    structIdx: structDefIdx,
-                    auxIdx: auxDefIdx,
-                    coeff: -1
-                });
-
-                // Add 1 if we had it today
-                constraints.push({
-                    structIdx: structDefIdx - 1,
-                    auxIdx: auxDefIdx,
-                    coeff: 1
-                })
-
-                // Add 1 if we had it yesterday
-                slots.forEach(slot => {
-                    const yesterday = previousDay(day);
-                    if (yesterday !== undefined) {
-                        const yesterdayStruct: RecipeInSlotStructDef | undefined = recipeStructDefs.find(def => def.day === yesterday && def.slot === slot && def.recipe === recipe);
-                        if (yesterdayStruct !== undefined) {
-                            constraints.push({
-                                structIdx: yesterdayStruct.idx,
-                                auxIdx: auxDefIdx,
-                                coeff: 1
-                            })
-                        }
-                    }
-                })
-
-                auxDefIdx++;
-                structDefIdx++;
-            }
-
-
+            newConstraint(
+                `At least ${recipe.portions.min} portions of ${recipe.name} for ${day} ${slot}`,
+                {min: 0},
+                [
+                    [1, portions],
+                    [-recipe.portions.min, eaten]
+                ]
+            )
         }
-    })
-})
+    }
+}
 
-loadProblem(lp, [...recipeStructDefs, ...lockStructDefs], [...mealSlotAuxDefs, ...dailyRecipeAuxDefs, ...maxTimeAuxDefs, ...dailyCaloriesDefs, weeklyCaloriesDef, ...unlockedAuxDefs], constraints);
+for (let day of days) {
+    for(let slot of slots) {
+        newConstraint(
+            `Number of recipes for ${day} ${slot}`,
+            {
+                min: mealRequired[day][slot] ? 1 : 0,
+                max: 1
+            },
+            meta => {
+                if (meta.type === "eaten" && meta.day === day && meta.slot === slot) return 1;
+            }
+        )
+    }
+}
 
+for (let day of days) {
+    for (let recipe of recipes) {
+        newConstraint(
+            `Number of ${recipe} eaten on ${day}`,
+            { max: 1 },
+            meta => {
+                if (meta.type === "eaten" && meta.day === day && meta.recipe === recipe) return 1;
+            }
+        )
+    }
+}
+
+for (let day of days) {
+    newConstraint(
+        `Calories on ${day}`,
+        {
+            min: calories.day.min,
+            max: calories.day.max
+        },
+        meta => {
+            if (meta.type === "portions" && day === meta.day) return meta.recipe.calories;
+        }
+    )
+}
+
+newConstraint(
+    "Total Weekly Calories",
+    {
+        min: calories.week.min,
+        max: calories.week.max
+    },
+    meta => {
+        if (meta.type === "portions") return meta.recipe.calories;
+    }
+)
+
+for (let day of days) {
+    newConstraint(
+        `Time spent on ${day}`,
+        { max: maxTime[day] },
+        meta => {
+            if (meta.type === "eaten" && day === meta.day) return meta.recipe.time;
+        }
+    )
+}
+
+
+const t1 = new Date();
+loadProblem(lp);
+const t2 = new Date();
+
+const t3 = new Date();
 lp.simplexSync({});
 lp.intoptSync({});
+const t4 = new Date();
 
-const tableData: string[][] = [
-    ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", ""],
-    ["Breakfast", "", "", "", "", "", "", "", ""],
-    ["Lunch", "", "", "", "", "", "", "", ""],
-    ["Starter", "", "", "", "", "", "", "", ""],
-    ["Dinner", "", "", "", "", "", "", "", ""],
-    ["Dessert", "", "", "", "", "", "", "", ""],
-    ["Calories", "", "", "", "", "", "", "", ""],
-    ["Time Spent", "", "", "", "", "", "", "", ""]
-]
-slots.forEach((slot, yIdx) => {
-    days.forEach((day, xIdx) => {
-        const foundDef = recipeStructDefs
-            .filter(def => def.slot === slot && def.day === day)
-            .find(def => lp.mipColVal(def.idx) === 1)
-        if (foundDef !== undefined) {
-            tableData[yIdx + 1][xIdx + 1] = foundDef.recipe.name
-        }
-    })
-});
-dailyCaloriesDefs.forEach(def => {
-    const cal = lp.mipRowVal(def.idx);
-    const idx = days.indexOf(def.day) + 1;
-    tableData[6][idx] = cal.toString();
-})
-tableData[6][8] = `Average: ${(lp.mipRowVal(weeklyCaloriesDef.idx)/7).toFixed()}`;
+console.log("Time to load problem:", t2.getTime() - t1.getTime());
+console.log("Time to solve problem", t4.getTime() - t3.getTime());
 
-maxTimeAuxDefs.forEach(def => {
-    const time = lp.mipRowVal(def.idx);
-    const idx = days.indexOf(def.day) + 1;
-    tableData[7][idx] = time.toString();
-})
-console.log(table(tableData));
-console.log();
-console.log(`Objective: ${lp.mipObjVal()}`);
-console.log("Iterations: ", lp.getItCnt());
-
-console.log("status:", lp.mipStatus());
-// console.log("feasible:", lp.mipStatus() == glp.FEAS);
-// console.log("optimal:", lp.mipStatus() == glp.OPT);
+printTable(lp);
 lp.delete();
 
