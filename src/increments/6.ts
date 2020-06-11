@@ -1,8 +1,9 @@
 import glp from "GLPK";
-import {loadProblem, newConstraint, newVariable,} from "./util";
-import {days, slots} from "./data";
-import {printTable} from "./print";
-import {calories, maxTime, mealRequired, recipes} from "./inputs";
+import {loadProblem, newConstraint, newVariable,} from "../util";
+import {days, slots} from "../data";
+import {printTable} from "../print";
+import {caloriesMax, caloriesMin, maxTime, mealRequired, recipes} from "../inputs";
+import {time} from "../timer";
 
 /*
 Versions:
@@ -20,14 +21,10 @@ Versions:
 - should show lots of high calorie desserts
 
 5. Daily calories
-- should show lack of variation
+- should struggle to reach high calorie counts
 
-6. Weekly calories
-- should show more variation, but low-calorie recipes not chosen very often
-
-7. Portions
+6. Portions
 - low-calorie recipes chosen more often
-
  */
 
 const lp = new glp.Problem();
@@ -89,7 +86,7 @@ for (let day of days) {
 }
 
 for (let day of days) {
-    for(let slot of slots) {
+    for (let slot of slots) {
         newConstraint(
             `Number of recipes for ${day} ${slot}`,
             {
@@ -107,7 +104,7 @@ for (let day of days) {
     for (let recipe of recipes) {
         newConstraint(
             `Number of ${recipe} eaten on ${day}`,
-            { max: 1 },
+            {max: 1},
             meta => {
                 if (meta.type === "eaten" && meta.day === day && meta.recipe === recipe) return 1;
             }
@@ -119,8 +116,8 @@ for (let day of days) {
     newConstraint(
         `Calories on ${day}`,
         {
-            min: calories.day.min,
-            max: calories.day.max
+            min: caloriesMin,
+            max: caloriesMax
         },
         meta => {
             if (meta.type === "portions" && day === meta.day) return meta.recipe.calories;
@@ -128,21 +125,10 @@ for (let day of days) {
     )
 }
 
-newConstraint(
-    "Total Weekly Calories",
-    {
-        min: calories.week.min,
-        max: calories.week.max
-    },
-    meta => {
-        if (meta.type === "portions") return meta.recipe.calories;
-    }
-)
-
 for (let day of days) {
     newConstraint(
         `Time spent on ${day}`,
-        { max: maxTime[day] },
+        {max: maxTime[day]},
         meta => {
             if (meta.type === "eaten" && day === meta.day) return meta.recipe.time;
         }
@@ -150,17 +136,11 @@ for (let day of days) {
 }
 
 
-const t1 = new Date();
-loadProblem(lp);
-const t2 = new Date();
-
-const t3 = new Date();
-lp.simplexSync({});
-lp.intoptSync({});
-const t4 = new Date();
-
-console.log("Time to load problem:", t2.getTime() - t1.getTime());
-console.log("Time to solve problem", t4.getTime() - t3.getTime());
+time(() => loadProblem(lp))
+time(() => {
+    lp.simplexSync({});
+    lp.intoptSync({});
+})
 
 printTable(lp);
 lp.delete();

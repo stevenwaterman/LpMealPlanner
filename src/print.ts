@@ -5,40 +5,61 @@ import {Problem} from "GLPK";
 
 export function printTable(lp: Problem) {
     const tableData: string[][] = [
-        ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", ""],
-        ["Breakfast", "", "", "", "", "", "", "", ""],
-        ["Lunch", "", "", "", "", "", "", "", ""],
-        ["Starter", "", "", "", "", "", "", "", ""],
-        ["Dinner", "", "", "", "", "", "", "", ""],
-        ["Dessert", "", "", "", "", "", "", "", "Average"],
-        ["Calories", "", "", "", "", "", "", "", ""],
-        ["Time Spent", "", "", "", "", "", "", "", ""]
+        ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+        ["Breakfast", "", "", "", "", "", "", ""],
+        ["Lunch", "", "", "", "", "", "", ""],
+        ["Starter", "", "", "", "", "", "", ""],
+        ["Dinner", "", "", "", "", "", "", ""],
+        ["Dessert", "", "", "", "", "", "", ""]
     ]
+
+    let hasPortions = false;
     slots.forEach((slot, yIdx) => {
         days.forEach((day, xIdx) => {
             const relevant: Variable[] = variables.filter(variable => variable.name.match(new RegExp(`Portions of .* for ${day} ${slot}`)));
-            const foundVariable = relevant.find(variable => lp.mipColVal(variable.idx) > 0);
-            if (foundVariable !== undefined) {
-                tableData[yIdx + 1][xIdx + 1] = `${lp.mipColVal(foundVariable.idx).toFixed(2)} ${foundVariable.meta.recipe.name.slice(0, 15)}`
+            const nonZero: Variable[] = relevant.filter(variable => lp.mipColVal(variable.idx) > 0.001);
+            if(nonZero.length) {
+                hasPortions = true;
+                tableData[yIdx + 1][xIdx + 1] = nonZero.map(variable => `${parseFloat(lp.mipColVal(variable.idx).toFixed(2))} ${variable.meta.recipe.name.slice(0, 30)}`).join("\n");
             }
         })
     });
 
+    if(!hasPortions) {
+        slots.forEach((slot, yIdx) => {
+            days.forEach((day, xIdx) => {
+                const relevant: Variable[] = variables.filter(variable => variable.name.match(new RegExp(`Ate .* for ${day} ${slot}`)));
+                const nonZero: Variable[] = relevant.filter(variable => lp.mipColVal(variable.idx) > 0.001);
+                if(nonZero.length) {
+                    hasPortions = true;
+                    tableData[yIdx + 1][xIdx + 1] = nonZero.map(variable => `${variable.meta.recipe.name.slice(0, 15)}`).join("\n");
+                }
+            })
+        });
+    }
+
+    let hasCalories = false;
+    const caloriesData = ["Calories", "", "", "", "", "", "", ""]
     days.forEach((day, xIdx) => {
         const constraint: Constraint | undefined = constraints.find(constraint => constraint.name.match(new RegExp(`Calories on ${day}`)));
-        if (constraint === undefined) throw new Error(`Could not find calories constraint for ${day}`);
-        tableData[6][xIdx + 1] = lp.mipRowVal(constraint.idx).toFixed(0);
+        if (constraint !== undefined) {
+            hasCalories = true;
+            caloriesData[xIdx + 1] = lp.mipRowVal(constraint.idx).toFixed(0);
+        }
     })
 
-    const weeklyCalsConstraint: Constraint | undefined = constraints.find(constraint => constraint.name === "Total Weekly Calories");
-    if (weeklyCalsConstraint === undefined) throw new Error(`Could not find weekly calories constraint`);
-    tableData[6][8] = (lp.mipRowVal(weeklyCalsConstraint.idx) / 7).toFixed(0);
-
+    let hasTime = false;
+    const timeData = ["Time", "", "", "", "", "", "", ""]
     days.forEach((day, xIdx) => {
         const constraint: Constraint | undefined = constraints.find(constraint => constraint.name.match(new RegExp(`Time spent on ${day}`)));
-        if (constraint === undefined) throw new Error(`Could not find time constraint for ${day}`);
-        tableData[7][xIdx + 1] = lp.mipRowVal(constraint.idx).toFixed(0);
+        if (constraint !== undefined) {
+            hasTime = true;
+            timeData[xIdx + 1] = `${lp.mipRowVal(constraint.idx).toFixed(0)} mins`;
+        }
     })
+
+    if (hasCalories) tableData.push(caloriesData);
+    if (hasTime) tableData.push(timeData);
 
     console.log();
     console.log(table(tableData));

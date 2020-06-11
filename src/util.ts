@@ -91,9 +91,8 @@ export function newConstraint(name: string, bounds: {min?:number, max?:number}, 
     }
 }
 
-
-
 function loadAux(lp: glp.Problem) {
+    if(constraints.length === 0) return;
     lp.addRows(constraints.length);
     constraints.forEach(({idx, max, min, name}) => {
         lp.setRowName(idx, name);
@@ -120,6 +119,7 @@ function loadAux(lp: glp.Problem) {
 
 
 function loadStruct(lp: glp.Problem) {
+    if(variables.length === 0) return;
     lp.addCols(variables.length);
     variables.forEach(({idx, kind, max, min, name, reward}) => {
         lp.setColName(idx, name);
@@ -167,4 +167,3 @@ export function loadConstraints(lp: glp.Problem): void {
 
     lp.loadMatrix(arraySize - 1, auxArray, structArray, coefficientsArray);
 }
-

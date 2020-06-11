@@ -10,16 +10,8 @@ export const maxTime: Record<Day, number> = {
     SUN: 180
 }
 
-export const calories = {
-    week: {
-        min: 2000 * 7,
-        max: 2200 * 7,
-    },
-    day: {
-        min: 1700,
-        max: 2500
-    }
-}
+export const caloriesMin = 1500;
+export const caloriesMax = 1900;
 
 export const mealRequired: Record<Day, Record<Slot, boolean>> = {
     MON: {
