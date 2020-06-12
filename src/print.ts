@@ -1,9 +1,17 @@
-import {days, slots} from "./data";
+import {days, meals} from "./data";
 import {Constraint, constraints, Variable, variables} from "./util";
 import {table} from "table";
-import {Problem} from "GLPK";
+import {Problem, UNDEF} from "GLPK";
 
 export function printTable(lp: Problem) {
+    switch(lp.mipStatus()){
+        case UNDEF: {
+            console.log("No Solution");
+            return;
+        }
+    }
+
+
     const tableData: string[][] = [
         ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
         ["Breakfast", "", "", "", "", "", "", ""],
@@ -14,7 +22,7 @@ export function printTable(lp: Problem) {
     ]
 
     let hasPortions = false;
-    slots.forEach((slot, yIdx) => {
+    meals.forEach((slot, yIdx) => {
         days.forEach((day, xIdx) => {
             const relevant: Variable[] = variables.filter(variable => variable.name.match(new RegExp(`Portions of .* for ${day} ${slot}`)));
             const nonZero: Variable[] = relevant.filter(variable => lp.mipColVal(variable.idx) > 0.001);
@@ -26,7 +34,7 @@ export function printTable(lp: Problem) {
     });
 
     if(!hasPortions) {
-        slots.forEach((slot, yIdx) => {
+        meals.forEach((slot, yIdx) => {
             days.forEach((day, xIdx) => {
                 const relevant: Variable[] = variables.filter(variable => variable.name.match(new RegExp(`Ate .* for ${day} ${slot}`)));
                 const nonZero: Variable[] = relevant.filter(variable => lp.mipColVal(variable.idx) > 0.001);

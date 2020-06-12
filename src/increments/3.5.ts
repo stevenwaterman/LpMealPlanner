@@ -1,15 +1,23 @@
 import glp from "GLPK";
-import {product, loadProblem, newVariable, newConstraint,} from "../util";
+import {loadProblem, newConstraint, newVariable, product,} from "../util";
 import {days, meals} from "../data";
 import {printTable} from "../print";
-import {mealRequired, recipes} from "../inputs";
+import {maxTime, mealRequired, recipes} from "../inputs";
 import {time} from "../timer";
-import "lodash.product";
 
 /*
 Versions:
 
 1. Set allowed meals
+
+2. Only allow 1 meal per meal
+- should show avocado toast for breakfast and lunch each day (bad)
+
+3. Only allow recipe once per day
+- should show same thing being eaten each day
+
+4. Max time
+- should show lots of high calorie desserts
 */
 
 const lp = new glp.Problem();
@@ -35,13 +43,36 @@ product(days, meals)
         newConstraint(
             `Number of recipes for ${day} ${meal}`,
             {
-                min: 1,
+                min: mealRequired[day][meal] ? 1 : 0,
                 max: 1
             },
             meta => {
                 if (meta.day === day && meta.meal === meal) return 1;
             }
         ))
+
+product(days, recipes)
+    .forEach(([day, recipe]) =>
+        newConstraint(
+            `Number of ${recipe} eaten on ${day}`,
+            {
+                min: 0,
+                max: 1
+            },
+            meta => {
+                if (meta.day === day && meta.recipe === recipe) return 1;
+            }
+        ))
+
+days.forEach(day =>
+    newConstraint(
+        `Time spent on ${day}`,
+        {max: maxTime[day]},
+        meta => {
+            if (meta.day === day) return meta.recipe.time;
+        }
+    )
+)
 
 lp.setObjDir(glp.MAX);
 

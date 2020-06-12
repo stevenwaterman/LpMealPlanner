@@ -1,16 +1,9 @@
 import glp from "GLPK";
-import {product, loadProblem, newVariable, newConstraint,} from "../util";
-import {days, meals} from "../data";
+import {loadProblem, newVariable, product,} from "../util";
 import {printTable} from "../print";
-import {mealRequired, recipes} from "../inputs";
 import {time} from "../timer";
-import "lodash.product";
-
-/*
-Versions:
-
-1. Set allowed meals
-*/
+import {days, meals} from "../data";
+import {recipes} from "../inputs";
 
 const lp = new glp.Problem();
 lp.setProbName("Meal Planning");
@@ -29,19 +22,6 @@ product(days, meals, recipes)
             recipe.rating
         )
     )
-
-product(days, meals)
-    .forEach(([day, meal]) =>
-        newConstraint(
-            `Number of recipes for ${day} ${meal}`,
-            {
-                min: 1,
-                max: 1
-            },
-            meta => {
-                if (meta.day === day && meta.meal === meal) return 1;
-            }
-        ))
 
 lp.setObjDir(glp.MAX);
 

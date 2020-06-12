@@ -8,21 +8,7 @@ import {recipes} from "../inputs";
 const lp = new glp.Problem();
 lp.setProbName("Meal Planning");
 
-product(days, meals, recipes)
-    .forEach(([day, meal, recipe]) =>
-        newVariable(
-            `Ate ${recipe.name} for ${day} ${meal}`,
-            {day, meal, recipe},
-            {
-                min: 0,
-                max: 1,
-                allowDecimal: false
-            },
-            recipe.rating
-        )
-    )
 
-lp.setObjDir(glp.MAX);
 
 time(() => loadProblem(lp))
 time(() => {

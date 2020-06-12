@@ -1,5 +1,5 @@
 import glp from "GLPK";
-import {Day, Recipe, Slot} from "./data";
+import {Day, Recipe, Meal} from "./data";
 
 export function loadProblem(lp: glp.Problem): void {
     loadStruct(lp);
@@ -21,12 +21,21 @@ export type Constraint = BaseVariable & {
 export type Variable = BaseVariable & {
     reward: number;
     kind?: glp.VARIABLE_KIND,
-    meta: {
-        type: "portions" | "eaten",
-        day: Day,
-        slot: Slot,
-        recipe: Recipe
-    }
+    meta: Meta
+}
+
+type Meta = {
+    type: "eaten" | "portions",
+    day: Day,
+    meal: Meal,
+    recipe: Recipe
+}
+
+type MetaInput = {
+    type?: "eaten" | "portions",
+    day: Day,
+    meal: Meal,
+    recipe: Recipe
 }
 
 let varIdx = 1;
@@ -47,7 +56,14 @@ export function nextConstraintIdx(): number {
 export const variables: Variable[] = [];
 export const constraints: Constraint[] = [];
 
-export function newVariable(name: string, meta: Variable["meta"], bounds: { min?: number, max?: number, allowDecimal: boolean }, reward: number = 0): Variable {
+export function newVariable(name: string, meta: MetaInput, bounds: { min?: number, max?: number, allowDecimal: boolean }, reward: number = 0): Variable {
+    const type: "eaten" | "portions" = meta.type ? meta.type : "eaten";
+    const actualMeta: Meta = {
+        type,
+        day: meta.day,
+        meal: meta.meal,
+        recipe: meta.recipe
+    }
     const variable: Variable = {
         idx: nextVariableIdx(),
         name,
@@ -55,7 +71,7 @@ export function newVariable(name: string, meta: Variable["meta"], bounds: { min?
         min: bounds.min,
         max: bounds.max,
         reward: reward,
-        meta
+        meta: actualMeta
     };
     variables.push(variable);
     return variable;
@@ -116,8 +132,6 @@ function loadAux(lp: glp.Problem) {
     })
 }
 
-
-
 function loadStruct(lp: glp.Problem) {
     if(variables.length === 0) return;
     lp.addCols(variables.length);
@@ -166,4 +180,28 @@ export function loadConstraints(lp: glp.Problem): void {
     })
 
     lp.loadMatrix(arraySize - 1, auxArray, structArray, coefficientsArray);
+}
+
+export function product<A extends any[], B extends any[]>(collection1: A, collection2: B, collection3?: undefined): Array<[A[number], B[number]]>;
+export function product<A extends any[], B extends any[], C extends any[]>(collection1: A, collection2: B, collection3: C): Array<[A[number], B[number], C[number]]>;
+export function product<A extends any[], B extends any[], C extends any[] | undefined>(collection1: A, collection2: B, collection3: C): any {
+    if (collection3 !== undefined) {
+        let output: Array<[any, any, any]> = [];
+        for(let a of collection1) {
+            for (let b of collection2) {
+                for(let c of collection3 as any[]) {
+                    output.push([a, b, c]);
+                }
+            }
+        }
+        return output;
+    } else {
+        let output: Array<[any, any]> = [];
+        for(let a of collection1) {
+            for (let b of collection2) {
+                output.push([a, b]);
+            }
+        }
+        return output;
+    }
 }

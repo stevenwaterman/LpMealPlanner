@@ -1,4 +1,4 @@
-import {Day, Recipe, Slot} from "./data";
+import {Day, Recipe, Meal} from "./data";
 
 export const maxTime: Record<Day, number> = {
     MON: 60,
@@ -10,10 +10,10 @@ export const maxTime: Record<Day, number> = {
     SUN: 180
 }
 
-export const caloriesMin = 1500;
-export const caloriesMax = 1900;
+export const caloriesMin = 1200;
+export const caloriesMax = 1400;
 
-export const mealRequired: Record<Day, Record<Slot, boolean>> = {
+export const mealRequired: Record<Day, Record<Meal, boolean>> = {
     MON: {
         BREAKFAST: true,
         LUNCH: true,
@@ -70,7 +70,7 @@ export const mealRequired: Record<Day, Record<Slot, boolean>> = {
 export const recipes: Recipe[] = [
     {
         name: "Cereal",
-        allowedSlots: ["BREAKFAST"],
+        allowedMeals: ["BREAKFAST"],
         calories: 254,
         time: 5,
         rating: 1,
@@ -82,7 +82,7 @@ export const recipes: Recipe[] = [
     },
     {
         name: "Avocado Toast",
-        allowedSlots: ["BREAKFAST", "LUNCH"],
+        allowedMeals: ["BREAKFAST", "LUNCH"],
         calories: 189,
         time: 10,
         rating: 3,
@@ -94,7 +94,7 @@ export const recipes: Recipe[] = [
     },
     {
         name: "Ploughman’s sandwich",
-        allowedSlots: ["LUNCH"],
+        allowedMeals: ["LUNCH"],
         calories: 670,
         time: 10,
         rating: 2,
@@ -106,7 +106,7 @@ export const recipes: Recipe[] = [
     },
     {
         name: "Club sandwich",
-        allowedSlots: ["LUNCH"],
+        allowedMeals: ["LUNCH"],
         calories: 744,
         time: 20,
         rating: 3,
@@ -118,7 +118,7 @@ export const recipes: Recipe[] = [
     },
     {
         name: "Chicken & ham sandwich pies",
-        allowedSlots: ["LUNCH", "DINNER"],
+        allowedMeals: ["LUNCH", "DINNER"],
         calories: 270,
         time: 50,
         rating: 2,
@@ -130,7 +130,7 @@ export const recipes: Recipe[] = [
     },
     {
         name: "Asparagus Risotto",
-        allowedSlots: ["LUNCH", "DINNER"],
+        allowedMeals: ["LUNCH", "DINNER"],
         calories: 623,
         time: 35,
         rating: 2,
@@ -142,7 +142,7 @@ export const recipes: Recipe[] = [
     },
     {
         name: "Fish & Chips",
-        allowedSlots: ["DINNER"],
+        allowedMeals: ["DINNER"],
         calories: 842,
         time: 90,
         rating: 4,
@@ -154,7 +154,7 @@ export const recipes: Recipe[] = [
     },
     {
         name: "Chilli con carne",
-        allowedSlots: ["DINNER"],
+        allowedMeals: ["DINNER"],
         calories: 387,
         time: 70,
         rating: 3,
@@ -166,7 +166,7 @@ export const recipes: Recipe[] = [
     },
     {
         name: "Chicken & chorizo jambalaya",
-        allowedSlots: ["LUNCH", "DINNER"],
+        allowedMeals: ["LUNCH", "DINNER"],
         calories: 445,
         time: 55,
         rating: 3,
@@ -178,7 +178,7 @@ export const recipes: Recipe[] = [
     },
     {
         name: "Chocolate Brownies",
-        allowedSlots: ["DESSERT"],
+        allowedMeals: ["DESSERT"],
         calories: 144,
         time: 60,
         rating: 4,
@@ -190,7 +190,7 @@ export const recipes: Recipe[] = [
     },
     {
         name: "Chocolate Cake",
-        allowedSlots: ["DESSERT"],
+        allowedMeals: ["DESSERT"],
         calories: 541,
         time: 120,
         rating: 5,
@@ -202,7 +202,7 @@ export const recipes: Recipe[] = [
     },
     {
         name: "Spiced carrot & lentil soup",
-        allowedSlots: ["LUNCH", "STARTER"],
+        allowedMeals: ["LUNCH", "STARTER"],
         calories: 238,
         time: 25,
         rating: 3,
@@ -214,7 +214,7 @@ export const recipes: Recipe[] = [
     },
     {
         name: "Spicy root & lentil casserole",
-        allowedSlots: ["DINNER"],
+        allowedMeals: ["DINNER"],
         calories: 378,
         time: 45,
         rating: 2,
@@ -226,7 +226,7 @@ export const recipes: Recipe[] = [
     },
     {
         name: "Red lentil, chickpea & chilli soup",
-        allowedSlots: ["LUNCH", "STARTER"],
+        allowedMeals: ["LUNCH", "STARTER"],
         calories: 222,
         time: 35,
         rating: 3,
@@ -238,7 +238,7 @@ export const recipes: Recipe[] = [
     },
     {
         name: "Store-bought Cake",
-        allowedSlots: ["DESSERT"],
+        allowedMeals: ["DESSERT"],
         calories: 229,
         time: 5,
         rating: 4,
@@ -250,7 +250,7 @@ export const recipes: Recipe[] = [
     },
     {
         name: "Chicken biryani",
-        allowedSlots: ["DINNER"],
+        allowedMeals: ["DINNER"],
         time: 40,
         calories: 617,
         rating: 4,
@@ -262,7 +262,7 @@ export const recipes: Recipe[] = [
     },
     {
         name: "Mustard-Stuffed Chicken",
-        allowedSlots: ["LUNCH", "DINNER"],
+        allowedMeals: ["LUNCH", "DINNER"],
         time: 30,
         calories: 367,
         rating: 3,
@@ -274,7 +274,7 @@ export const recipes: Recipe[] = [
     },
     {
         name: "Victoria Sponge",
-        allowedSlots: ["DESSERT"],
+        allowedMeals: ["DESSERT"],
         calories: 558,
         time: 30,
         rating: 5,
@@ -286,7 +286,7 @@ export const recipes: Recipe[] = [
     },
     {
         name: "Lemon Drizzle Cake",
-        allowedSlots: ["DESSERT"],
+        allowedMeals: ["DESSERT"],
         calories: 399,
         time: 60,
         rating: 5,
@@ -298,7 +298,7 @@ export const recipes: Recipe[] = [
     },
     {
         name: "Churros ice cream sandwich",
-        allowedSlots: ["DESSERT"],
+        allowedMeals: ["DESSERT"],
         calories: 671,
         time: 35,
         rating: 3,
@@ -310,7 +310,7 @@ export const recipes: Recipe[] = [
     },
     {
         name: "Chewy chocolate chip cookies",
-        allowedSlots: ["DESSERT"],
+        allowedMeals: ["DESSERT"],
         calories: 299,
         time: 20,
         rating: 4,
