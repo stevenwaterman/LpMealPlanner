@@ -1,114 +1,89 @@
-import glp from "GLPK";
-import {loadProblem, newConstraint, newVariable, product} from "./util";
-import {printTable} from "./print";
+import glp, {FBINGO, FBRANCH, FCUTGEN, FHEUR, FPREPRO, FSELECT, MSG_ALL, MSG_DBG, MSG_OFF, Tree} from "GLPK";
+import {loadProblem, newConstraint, newVariable} from "./util";
 import {time} from "./timer";
-import {days, meals} from "./data";
-import {caloriesMax, caloriesMin, maxTime, mealRequired, recipes} from "./inputs";
 
 const lp = new glp.Problem();
 lp.setProbName("Meal Planning");
+glp.termOutput(true);
 
-product(days, meals, recipes)
-    .filter(([_, meal, recipe]) => recipe.allowedMeals.includes(meal))
-    .forEach(([day, meal, recipe]) => {
-            const eaten = newVariable(
-                `Ate ${recipe.name} for ${day} ${meal}`,
-                {type: "eaten", day, meal, recipe},
-                {
-                    min: 0,
-                    max: 1,
-                    allowDecimal: false
-                },
-                recipe.rating
-            )
+const a = newVariable("a", {} as any, {min: 0, max: 10, allowDecimal: false}, 2);
+const b = newVariable("b", {} as any, {min: 4, max: 20, allowDecimal: false}, 3);
+const c = newVariable("c", {} as any, {min: -10, max: 15, allowDecimal: false}, -1);
+const d = newVariable("d", {} as any, {min: 0, max: 2, allowDecimal: true}, 2);
+const e = newVariable("e", {} as any, {min: -5, max: 5, allowDecimal: true}, 1.5);
 
-            const portions = newVariable(
-                `Portions of ${recipe.name} for ${day} ${meal}`,
-                {type: "portions", day, meal, recipe},
-                {
-                    min: 0,
-                    max: recipe.portions.max,
-                    allowDecimal: recipe.portions.allowDecimal
-                }
-            )
+newConstraint("1", {min: 35, max: 45}, [
+    [3, a],
+    [-1, d],
+    [4, e]
+])
 
-            newConstraint(
-                `if eaten === 1, portions >= min`,
-                {min: 0},
-                [
-                    [-recipe.portions.min, eaten],
-                    [1, portions]
-                ]
-            )
+newConstraint("2", {min: -40, max: -35}, [
+    [1, a],
+    [-5, b],
+    [0.5, c],
+    [2, d]
+]);
 
-            newConstraint(
-                `if portions > 0, eaten === 1`,
-                {min: 0},
-                [
-                    [recipe.portions.max, eaten],
-                    [-1, portions]
-                ]
-            )
-        }
-    )
+newConstraint("3", {min: 2, max: 4}, [
+    [1, d],
+    [1, e]
+])
 
-product(days, meals)
-    .forEach(([day, meal]) =>
-        newConstraint(
-            `Number of recipes for ${day} ${meal}`,
-            {
-                min: mealRequired[day][meal] ? 1 : 0,
-                max: 1
-            },
-            meta => {
-                if (meta.type === "eaten" && meta.day === day && meta.meal === meal) return 1;
-            }
-        ))
-
-product(days, recipes)
-    .forEach(([day, recipe]) =>
-        newConstraint(
-            `Number of ${recipe} eaten on ${day}`,
-            {
-                min: 0,
-                max: 1
-            },
-            meta => {
-                if (meta.type === "eaten" && meta.day === day && meta.recipe === recipe) return 1;
-            }
-        ))
-
-days.forEach(day =>
-    newConstraint(
-        `Time spent on ${day}`,
-        {max: maxTime[day]},
-        meta => {
-            if (meta.type === "eaten" && meta.day === day) return meta.recipe.time;
-        }
-    )
-)
-
-days.forEach(day =>
-    newConstraint(
-        `Calories on ${day}`,
-        {
-            min: caloriesMin,
-            max: caloriesMax
-        },
-        meta => {
-            if (meta.type === "portions" && meta.day === day) return meta.recipe.calories;
-        }
-    )
-)
+newConstraint("4", {min: 0, max: 25}, [
+    [2, b],
+    [1, c],
+    [0.1, d],
+    [-3, e]
+])
 
 lp.setObjDir(glp.MAX);
 
 time(() => loadProblem(lp))
 time(() => {
-    lp.simplexSync({});
-    lp.intoptSync({});
+    console.log("a", lp.getColPrim(a.idx));
+    console.log("b", lp.getColPrim(b.idx));
+    console.log("c", lp.getColPrim(c.idx));
+    console.log("d", lp.getColPrim(d.idx));
+    console.log("e", lp.getColPrim(e.idx));
+
+    console.log("objective", lp.getObjVal());
+    console.log()
+    console.log();
+
+    for(let i = 0; i < 10; i++){
+        // @ts-ignore
+        lp.simplexSync({msgLev: MSG_OFF, outFrq: 1, itLim: 1});
+        console.log("a", lp.getColPrim(a.idx));
+        console.log("b", lp.getColPrim(b.idx));
+        console.log("c", lp.getColPrim(c.idx));
+        console.log("d", lp.getColPrim(d.idx));
+        console.log("e", lp.getColPrim(e.idx));
+
+        console.log("objective", lp.getObjVal());
+        console.log()
+        console.log()
+    }
+
+
+    function callback(tree: Tree){
+        console.log("a", lp.mipColVal(a.idx));
+        console.log("b", lp.mipColVal(b.idx));
+        console.log("c", lp.mipColVal(c.idx));
+        console.log("d", lp.mipColVal(d.idx));
+        console.log("e", lp.mipColVal(e.idx));
+
+        console.log("objective", lp.mipObjVal());
+        console.log()
+        console.log()
+    }
+    lp.intopt({cbFunc: callback, cbReasons: glp.FBINGO + glp.FHEUR + glp.FCUTGEN + glp.FBRANCH + glp.FSELECT + FPREPRO, msgLev: MSG_DBG}, function(err, ret){
+        if (err)
+            console.log(err);
+        else
+            console.log("objective: " + lp.mipObjVal())
+        lp.delete();
+    });
 })
 
-printTable(lp);
-lp.delete();
 

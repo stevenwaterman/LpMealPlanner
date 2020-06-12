@@ -176,6 +176,8 @@ declare module "GLPK" {
         scaleSync(scaling: SCALING_OPTIONS): void;
 
         simplex(option: {
+            cbFunc?: (tree: Tree) => void;
+            cbReasons?: number;
             msgLev?: MSG_LVL;
             meth?: SIMPLEX_METHOD;
             pricing?: PRICING;
@@ -195,11 +197,13 @@ declare module "GLPK" {
 
         intopt(options: {
             cbFunc?: (tree: Tree) => void;
-            cbReasons?: REASON_CODE_F;
+            cbReasons?: number;
+            msgLev?: MSG_LVL;
         } | null, callback: (err: string | undefined, ret: number) => void): void;
 
         intoptSync(options: {
             cbFunc?: (tree: Tree) => void;
+            msgLev?: MSG_LVL;
         } | null): void;
 
         mipObjVal(): number;
