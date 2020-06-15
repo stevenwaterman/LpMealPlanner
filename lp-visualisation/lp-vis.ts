@@ -1,9 +1,10 @@
-// import glp from "GLPK";
-// import {loadProblem, newConstraint, newVariable} from "../src/util";
-// import {time} from "../src/timer";
+// import glp, {FBINGO, FBRANCH, FCUTGEN, FHEUR, FPREPRO, FSELECT, MSG_ALL, MSG_DBG, MSG_OFF, Tree} from "GLPK";
+// import {loadProblem, newConstraint, newVariable} from "./util";
+// import {time} from "./timer";
 //
 // const lp = new glp.Problem();
 // lp.setProbName("Meal Planning");
+// glp.termOutput(true);
 //
 // const a = newVariable("a", {} as any, {min: 0, max: 10, allowDecimal: false}, 2);
 // const b = newVariable("b", {} as any, {min: 4, max: 20, allowDecimal: false}, 3);
@@ -40,20 +41,49 @@
 //
 // time(() => loadProblem(lp))
 // time(() => {
-//     lp.simplexSync({});
-//     lp.intoptSync({});
+//     console.log("a", lp.getColPrim(a.idx));
+//     console.log("b", lp.getColPrim(b.idx));
+//     console.log("c", lp.getColPrim(c.idx));
+//     console.log("d", lp.getColPrim(d.idx));
+//     console.log("e", lp.getColPrim(e.idx));
+//
+//     console.log("objective", lp.getObjVal());
+//     console.log()
+//     console.log();
+//
+//     for(let i = 0; i < 10; i++){
+//         // @ts-ignore
+//         lp.simplexSync({msgLev: MSG_OFF, outFrq: 1, itLim: 1});
+//         console.log("a", lp.getColPrim(a.idx));
+//         console.log("b", lp.getColPrim(b.idx));
+//         console.log("c", lp.getColPrim(c.idx));
+//         console.log("d", lp.getColPrim(d.idx));
+//         console.log("e", lp.getColPrim(e.idx));
+//
+//         console.log("objective", lp.getObjVal());
+//         console.log()
+//         console.log()
+//     }
+//
+//
+//     function callback(tree: Tree){
+//         console.log("a", lp.mipColVal(a.idx));
+//         console.log("b", lp.mipColVal(b.idx));
+//         console.log("c", lp.mipColVal(c.idx));
+//         console.log("d", lp.mipColVal(d.idx));
+//         console.log("e", lp.mipColVal(e.idx));
+//
+//         console.log("objective", lp.mipObjVal());
+//         console.log()
+//         console.log()
+//     }
+//     lp.intopt({cbFunc: callback, cbReasons: glp.FBINGO + glp.FHEUR + glp.FCUTGEN + glp.FBRANCH + glp.FSELECT + FPREPRO, msgLev: MSG_DBG}, function(err, ret){
+//         if (err)
+//             console.log(err);
+//         else
+//             console.log("objective: " + lp.mipObjVal())
+//         lp.delete();
+//     });
 // })
 //
-// // printTable(lp);
-//
-// console.log("a", lp.mipColVal(a.idx));
-// console.log("b", lp.mipColVal(b.idx));
-// console.log("c", lp.mipColVal(c.idx));
-// console.log("d", lp.mipColVal(d.idx));
-// console.log("e", lp.mipColVal(e.idx));
-//
-// console.log("objective", lp.getObjVal());
-// console.log("iterations", lp.getItCnt());
-//
-// lp.delete();
 //
