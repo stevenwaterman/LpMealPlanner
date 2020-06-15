@@ -2,15 +2,9 @@ import glp from "GLPK";
 import {product, loadProblem, newVariable, newConstraint,} from "../util";
 import {days, meals} from "../data";
 import {printTable} from "../print";
-import {mealRequired, recipes} from "../inputs";
+import {recipes} from "../inputs";
 import {time} from "../timer";
 import "lodash.product";
-
-/*
-Versions:
-
-1. Set allowed meals
-*/
 
 const lp = new glp.Problem();
 lp.setProbName("Meal Planning");

@@ -1,9 +1,9 @@
 import glp from "GLPK";
-import {loadProblem, newConstraint, newVariable, product,} from "../util";
-import {days, meals} from "../data";
-import {printTable} from "../print";
-import {caloriesMax, caloriesMin, maxTime, mealRequired, recipes} from "../inputs";
-import {time} from "../timer";
+import {loadProblem, newConstraint, newVariable, product,} from "./util";
+import {days, meals} from "./data";
+import {printTable} from "./print";
+import {caloriesMax, caloriesMin, maxTime, mealRequired, recipes} from "./inputs";
+import {time} from "./timer";
 
 const lp = new glp.Problem();
 lp.setProbName("Meal Planning");

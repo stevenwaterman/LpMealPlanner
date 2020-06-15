@@ -2,23 +2,8 @@ import glp from "GLPK";
 import {loadProblem, newConstraint, newVariable, product,} from "../util";
 import {days, meals} from "../data";
 import {printTable} from "../print";
-import {maxTime, mealRequired, recipes} from "../inputs";
+import {maxTime, recipes} from "../inputs";
 import {time} from "../timer";
-
-/*
-Versions:
-
-1. Set allowed meals
-
-2. Only allow 1 meal per meal
-- should show avocado toast for breakfast and lunch each day (bad)
-
-3. Only allow recipe once per day
-- should show same thing being eaten each day
-
-4. Max time
-- should show lots of high calorie desserts
-*/
 
 const lp = new glp.Problem();
 lp.setProbName("Meal Planning");
