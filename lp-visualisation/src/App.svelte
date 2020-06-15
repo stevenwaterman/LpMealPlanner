@@ -62,17 +62,17 @@
 
     .grid {
         display: grid;
-        grid-template-columns: 100px 1fr 1fr 1fr 1fr 1fr 80px 80px 80px;
+        grid-template-columns: 120px 1fr 1fr 1fr 1fr 1fr 80px 80px 80px;
         grid-template-rows: auto repeat(10, 80px);
         justify-items: center;
         grid-gap: 12px;
-        width: 800px;
+        width: 1000px;
         margin: auto;
     }
 </style>
 
 <div class="grid">
-    <div class="col" style="grid-column: 1; grid-row: 1">
+    <div class="col" style="grid-column: 1; grid-row: 1; font-size: 16pt">
         Variables
     </div>
 
@@ -82,7 +82,7 @@
         </div>
     {/each}
 
-    <div class="col" style="grid-column: 1; grid-row: 6">
+    <div class="col" style="grid-column: 1; grid-row: 6; font-size: 16pt">
         Objective
     </div>
 
@@ -96,7 +96,7 @@
         <input class="verticalSlider" type="range" min="0" max="10" bind:value={a}/>
         <div>0</div>
         <div style="margin-top: 4px">a</div>
-        <div style="margin-bottom: 20px; font-size: 18pt">{parseFloat(a.toFixed(3))}</div>
+        <div style="margin-bottom: 20px; font-size: 24pt">{parseFloat(a.toFixed(3))}</div>
     </div>
 
     <div class="col" style="grid-column: 3; grid-row: 1">
@@ -104,7 +104,7 @@
         <input class="verticalSlider" type="range" min="4" max="20" bind:value={b}/>
         <div>4</div>
         <div style="margin-top: 4px">b</div>
-        <div style="margin-bottom: 20px; font-size: 18pt">{parseFloat(b.toFixed(3))}</div>
+        <div style="margin-bottom: 20px; font-size: 24pt">{parseFloat(b.toFixed(3))}</div>
     </div>
 
     <div class="col" style="grid-column: 4; grid-row: 1">
@@ -112,7 +112,7 @@
         <input class="verticalSlider" type="range" min="-10" max="15" bind:value={c}/>
         <div>-10</div>
         <div style="margin-top: 4px">c</div>
-        <div style="margin-bottom: 20px; font-size: 18pt">{parseFloat(c.toFixed(3))}</div>
+        <div style="margin-bottom: 20px; font-size: 24pt">{parseFloat(c.toFixed(3))}</div>
     </div>
 
     <div class="col" style="grid-column: 5; grid-row: 1">
@@ -120,7 +120,7 @@
         <input class="verticalSlider" type="range" min="0" max="2" step="0.001" bind:value={d}/>
         <div>0</div>
         <div style="margin-top: 4px">d</div>
-        <div style="margin-bottom: 20px; font-size: 18pt">{parseFloat(d.toFixed(3))}</div>
+        <div style="margin-bottom: 20px; font-size: 24pt">{parseFloat(d.toFixed(3))}</div>
     </div>
 
     <div class="col" style="grid-column: 6; grid-row: 1">
@@ -128,7 +128,7 @@
         <input class="verticalSlider" type="range" min="-5" max="5" step="0.001" bind:value={e}/>
         <div>-5</div>
         <div style="margin-top: 4px">e</div>
-        <div style="margin-bottom: 20px; font-size: 18pt">{parseFloat(e.toFixed(3))}</div>
+        <div style="margin-bottom: 20px; font-size: 24pt">{parseFloat(e.toFixed(3))}</div>
     </div>
 
     {#each matrix as row, yIdx}
@@ -159,12 +159,12 @@
     {/each}
 
     {#each matrix as row, yIdx}
-        <div class="col" style={`grid-column: 8; grid-row: ${yIdx+2}; font-size: 18pt`}>
+        <div class="col" style={`grid-column: 8; grid-row: ${yIdx+2}; font-size: 24pt`}>
             {parseFloat(rowValues[yIdx].toFixed(2))}
         </div>
     {/each}
 
-    <div class="col" style={`grid-column: 8; grid-row: 6; font-size: 18pt`}>
+    <div class="col" style={`grid-column: 8; grid-row: 6; font-size: 32pt`}>
         {parseFloat(objectiveValue.toFixed(2))}
     </div>
 
@@ -174,6 +174,12 @@
             <div class="light" class:lit={rowValues[yIdx] <= max}></div>
         </div>
     {/each}
+
+    <div style="grid-row: 2; grid-column: 1 / span 9; border: 1px solid black; width: 100%"></div>
+    <div style="grid-row: 3; grid-column: 1 / span 9; border: 1px solid black; width: 100%"></div>
+    <div style="grid-row: 4; grid-column: 1 / span 9; border: 1px solid black; width: 100%"></div>
+    <div style="grid-row: 5; grid-column: 1 / span 9; border: 1px solid black; width: 100%"></div>
+    <div style="grid-row: 6; grid-column: 1 / span 9; border: 1px solid black; width: 100%"></div>
 
 </div>
 

@@ -1,7 +1,7 @@
 import App from './App.svelte';
 import Robotic from "./Robotic.svelte";
 
-const app = new Robotic({
+const app = new App({
 	target: document.body,
 	props: { }
 });

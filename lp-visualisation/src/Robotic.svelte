@@ -20,6 +20,8 @@
     $: values = [$a, $b, $c, $d, $e];
     $: rowValues = matrix.map(row => row.map((coeff, idx) => coeff * values[idx]).reduce((a, b) => a + b, 0));
     $: objectiveValue = objective.map((coeff, idx) => coeff * values[idx]).reduce((a, b) => a + b, 0);
+    $: varMins = [0,4,-10,0,-5];
+    $: varMaxs = [10,20,15,2,5];
     $: mins = [35, -40, 2, 0];
     $: maxs = [45, -35, 4, 25];
 
@@ -88,11 +90,11 @@
 
     .grid {
         display: grid;
-        grid-template-columns: 100px 1fr 1fr 1fr 1fr 1fr 80px 80px 80px;
+        grid-template-columns: 120px 1fr 1fr 1fr 1fr 1fr 80px 80px 80px;
         grid-template-rows: auto repeat(10, 80px);
         justify-items: center;
         grid-gap: 12px;
-        width: 800px;
+        width: 1000px;
         margin: auto;
     }
 </style>
@@ -100,7 +102,7 @@
 <button on:click={stepSolution}>Step</button>
 <div class="grid">
 
-    <div class="col" style="grid-column: 1; grid-row: 1">
+    <div class="col" style="grid-column: 1; grid-row: 1; font-size: 16pt;">
         Variables
     </div>
 
@@ -110,7 +112,7 @@
         </div>
     {/each}
 
-    <div class="col" style="grid-column: 1; grid-row: 6">
+    <div class="col" style="grid-column: 1; grid-row: 6; font-size: 16pt;">
         Objective
     </div>
 
@@ -118,36 +120,17 @@
     <div style="grid-column: 8; grid-row: 1; margin-top: auto">Total</div>
     <div style="grid-column: 9; grid-row: 1; margin-top: auto">Max</div>
 
-
-    <div class="col" style="grid-column: 2; grid-row: 1; height: 150px; justify-content: flex-end">
-        <div style={`background-color: grey; width: 50px; height: ${100*($a/10)}px`}></div>
-        <div style="margin-top: 4px">a</div>
-        <div style="margin-bottom: 20px; font-size: 18pt">{parseFloat($a.toFixed(3))}</div>
-    </div>
-
-    <div class="col" style="grid-column: 3; grid-row: 1; height: 150px; justify-content: flex-end">
-        <div style={`background-color: grey; width: 50px; height: ${100*(($b-4)/16)}px`}></div>
-        <div style="margin-top: 4px">b</div>
-        <div style="margin-bottom: 20px; font-size: 18pt">{parseFloat($b.toFixed(3))}</div>
-    </div>
-
-    <div class="col" style="grid-column: 4; grid-row: 1; height: 150px; justify-content: flex-end">
-        <div style={`background-color: grey; width: 50px; height: ${100*(($c+10)/25)}px`}></div>
-        <div style="margin-top: 4px">c</div>
-        <div style="margin-bottom: 20px; font-size: 18pt">{parseFloat($c.toFixed(3))}</div>
-    </div>
-
-    <div class="col" style="grid-column: 5; grid-row: 1; height: 150px; justify-content: flex-end">
-        <div style={`background-color: grey; width: 50px; height: ${100*($d/2)}px`}></div>
-        <div style="margin-top: 4px">d</div>
-        <div style="margin-bottom: 20px; font-size: 18pt">{parseFloat($d.toFixed(3))}</div>
-    </div>
-
-    <div class="col" style="grid-column: 6; grid-row: 1; height: 150px; justify-content: flex-end">
-        <div style={`background-color: grey; width: 50px; height: ${100*(($e+5)/10)}px`}></div>
-        <div style="margin-top: 4px">e</div>
-        <div style="margin-bottom: 20px; font-size: 18pt">{parseFloat($e.toFixed(3))}</div>
-    </div>
+    {#each [0,1,2,3,4] as idx}
+        <div class="col" style={`grid-column: ${2+idx}; grid-row: 1; height: 300px; justify-content: flex-end`}>
+            <div>{varMaxs[idx]}</div>
+            <div style="position:relative; width: 50px; height: 100px; flex-shrink: 0; border: 1px solid black">
+                <div style={`position: absolute; bottom: 0; background-color: grey; width: 50px; height: ${100*((values[idx]-varMins[idx])/(varMaxs[idx]-varMins[idx]))}px`}></div>
+            </div>
+            <div>{varMins[idx]}</div>
+            <div style="margin-top: 4px">{["a","b","c","d","e"][idx]}</div>
+            <div style="margin-bottom: 20px; font-size: 24pt">{parseFloat(values[idx].toFixed(3))}</div>
+        </div>
+    {/each}
 
     {#each matrix as row, yIdx}
         {#each row as coeff, xIdx}
@@ -177,12 +160,12 @@
     {/each}
 
     {#each matrix as row, yIdx}
-        <div class="col" style={`grid-column: 8; grid-row: ${yIdx+2}; font-size: 18pt`}>
+        <div class="col" style={`grid-column: 8; grid-row: ${yIdx+2}; font-size: 24pt`}>
             {parseFloat(rowValues[yIdx].toFixed(2))}
         </div>
     {/each}
 
-    <div class="col" style={`grid-column: 8; grid-row: 6; font-size: 18pt`}>
+    <div class="col" style={`grid-column: 8; grid-row: 6; font-size: 32pt`}>
         {parseFloat(objectiveValue.toFixed(2))}
     </div>
 
@@ -192,6 +175,12 @@
             <div class="light" class:lit={rowValues[yIdx] <= max}></div>
         </div>
     {/each}
+
+   <div style="grid-row: 2; grid-column: 1 / span 9; border: 1px solid black; width: 100%"></div>
+   <div style="grid-row: 3; grid-column: 1 / span 9; border: 1px solid black; width: 100%"></div>
+   <div style="grid-row: 4; grid-column: 1 / span 9; border: 1px solid black; width: 100%"></div>
+   <div style="grid-row: 5; grid-column: 1 / span 9; border: 1px solid black; width: 100%"></div>
+   <div style="grid-row: 6; grid-column: 1 / span 9; border: 1px solid black; width: 100%"></div>
 
 </div>
 
